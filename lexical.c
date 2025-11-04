@@ -19,9 +19,11 @@ typedef enum {
     Token_Delimeter,
     Token_Comment,
     Token_Arithmetic_Operator,
+    Token_Arithmetic_Operator_DIV,
     Token_Boolean_Operator,
+    Token_Boolean_Operator_AND,
+    Token_Boolean_Operator_OR,
     Token_Assignment_Operator,
-    Token_Arithmetic_Operator_DIV, 
     Token_Builtin_Constant,
     Token_Keyword_If,
     Token_Keyword_Else,
@@ -80,7 +82,9 @@ Keyword keywords[] = {
     {"false", Token_Reserved_False},
     {"null", Token_Reserved_Null},
     {"do", Token_Noise_Do},
-    {"DIV", Token_Arithmetic_Operator_DIV}
+    {"DIV", Token_Arithmetic_Operator_DIV},
+    {"OR", Token_Boolean_Operator_OR},
+    {"AND", Token_Boolean_Operator_AND}
 };
 
 //Automaton States
@@ -97,21 +101,8 @@ typedef enum{
     STATE_IN_SINGLE_LINE_COMMENT,
     STATE_IN_BLOCK_COMMENT,
     STATE_IN_BLOCK_COMMENT_TILDE,
-    //special states for DIV operator
-    STATE_IN_D_DIV,
-    STATE_IN_I,
-    STATE_IN_V,
-    //special states for or operator
-    STATE_IN_O,
-    STATE_IN_R,
-    //special states for and operator
-    STATE_IN_A,
-    STATE_IN_N,
-    STATE_IN_D_AND,
-    //special states for = and == 
-    STATE_IN_EQUAL,
     STATE_DONE,
-}AutomatonState;
+} AutomatonState;
 
 // Function Prototypes
 Token getNextToken(FILE* srcFile);
@@ -126,6 +117,7 @@ int main(){
 Token getNextToken(FILE* srcFile){
     Token token;
     int state = 0; // Start state
+    AutomatonState currentState = STATE_START;
     char ch; // Current character
     int lexemeIndex = 0; // Index for lexeme
     token.line_number = 1; // Initialize line number
