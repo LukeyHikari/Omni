@@ -83,6 +83,36 @@ Keyword keywords[] = {
     {"DIV", Token_Arithmetic_Operator_DIV}
 };
 
+//Automaton States
+typedef enum{
+    STATE_START,
+    STATE_IN_IDENTIFIER,
+    STATE_IN_NUMBER,
+    STATE_IN_CHAR,
+    STATE_IN_CHAR_EXPECT_CLOSE,
+    STATE_IN_CHAR_ESCAPE,
+    STATE_IN_STRING,
+    STATE_IN_STRING_ESCAPE,
+    STATE_IN_TILDE,
+    STATE_IN_SINGLE_LINE_COMMENT,
+    STATE_IN_BLOCK_COMMENT,
+    STATE_IN_BLOCK_COMMENT_TILDE,
+    //special states for DIV operator
+    STATE_IN_D_DIV,
+    STATE_IN_I,
+    STATE_IN_V,
+    //special states for or operator
+    STATE_IN_O,
+    STATE_IN_R,
+    //special states for and operator
+    STATE_IN_A,
+    STATE_IN_N,
+    STATE_IN_D_AND,
+    //special states for = and == 
+    STATE_IN_EQUAL,
+    STATE_DONE,
+}AutomatonState;
+
 // Function Prototypes
 Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
@@ -148,6 +178,56 @@ Token getNextToken(FILE* srcFile){
             case 3: // Comment state (not implemented)
                 // Handle comments  here
                 break;
+
+            /*case STATE_IN_TILDE:
+                if(currentChar == '/'){
+                    lexemeBuffer[lexemeIndex++] = getChar();
+                    currentState = STATE_IN_BLOCK_COMMENT;
+                }
+                else{
+                    currentState = STATE_IN_SINGLE_LINE_COMMENT;
+                }
+                break;
+            
+            case STATE_IN_SINGLE_LINE_COMMENT:
+                if (currentChar == '\n' || currentChar == '\0') {
+                    currentState = STATE_DONE;
+                    return createToken(Token_Single_Line_Comment, lexemeBuffer, lexemeIndex);
+                }
+                else {
+                    lexemeBuffer[lexemeIndex++] = getChar();
+                }
+                break;
+
+            case STATE_IN_BLOCK_COMMENT:
+                if(currentChar == '/') {
+                    lexemeBuffer[lexemeIndex++] = getChar();
+                    currentState = STATE_IN_BLOCK_COMMENT_TILDE;
+                }
+                else if (currentChar == '\0') {
+                    currentState = STATE_DONE;
+                    return createToken(Token_Unknown, "Unclosed block comment", 22);
+                }
+                else {
+                    lexemeBuffer[lexemeIndex++] = getChar();
+    
+                }
+                break;
+                
+            case STATE_IN_BLOCK_COMMENT_TILDE:
+                if (currentChar == '~') {
+                    lexemeBuffer[lexemeIndex++] = getChar(); 
+                    currentState = STATE_DONE;
+                    return createToken(Token_Block_Comment, lexemeBuffer, lexemeIndex);
+                }
+                else if (currentChar == '\0') {
+                    currentState = STATE_DONE;
+                    return createToken(Token_Unknown, "Unclosed block comment", 22);
+                }
+                else {
+                    currentState = STATE_IN_BLOCK_COMMENT;
+                }
+                break;*/
 
             case 4: // String state (not implemented)
                 if(ch != '"'){
