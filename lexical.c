@@ -124,6 +124,7 @@ Token getNextToken(FILE* srcFile){
 
     while((ch = fgetc(srcFile)) != EOF){
         switch(currentState){
+            #pragma region Start State
             case STATE_START: // Start state
                 if(isspace(ch)){
                     if(ch == '\n') token.line_number++;
@@ -156,7 +157,9 @@ Token getNextToken(FILE* srcFile){
                     return token; // Return single character tokens
                 }
                 break;
+            #pragma endregion
 
+            #pragma region Identifier State
             case STATE_IN_IDENTIFIER: // Identifier state
                 if(isalnum(ch) || ch == '_'){
                     token.lexeme[lexemeIndex++] = ch;
@@ -167,7 +170,9 @@ Token getNextToken(FILE* srcFile){
                     return token;
                 }
                 break;
-
+            #pragma endregion
+            
+            #pragma region Number State
             case STATE_IN_NUMBER: // Number state
                 if(isdigit(ch) || ch == '.') token.lexeme[lexemeIndex++] = ch;
                 else { // Not a number character
@@ -177,7 +182,9 @@ Token getNextToken(FILE* srcFile){
                     return token;
                 }
                 break;
+            #pragma endregion
             
+            #pragma region Sring and Char States
             case STATE_IN_STRING:
                 if(ch != '"'){
                     token.lexeme[lexemeIndex++] = ch; // Add character to string
@@ -199,7 +206,9 @@ Token getNextToken(FILE* srcFile){
                     return token;
                 }
                 break;
-
+            #pragma endregion
+            
+            #pragma region Comment States
             case STATE_IN_SINGLE_LINE_COMMENT:
                 if (ch == '\n' || ch == EOF) {
                     currentState = STATE_DONE;
@@ -239,13 +248,18 @@ Token getNextToken(FILE* srcFile){
                     token.lexeme[lexemeIndex++] = ch; // Add character to comment
                 }
                 break;
+            #pragma endregion
 
             case STATE_IN_OPERATOR: // Operator state (not implemented)
                 // Handle multi-character operators here
                 break;
 
             case STATE_IN_DELIMETER: // Delimeter state (not implemented)
-                // Handle delimeters here
+                if(strchr("(){}[],.", ch)){
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = getlexemeType(token.lexeme);
+                    return token;
+                }
                 break;
 
             case STATE_DONE: // End of file state
@@ -258,4 +272,39 @@ Token getNextToken(FILE* srcFile){
     }
 
     return token;
+}
+
+Token_Type getlexemeType(const char* lexeme){
+    // Check if lexeme is a keyword
+    for(int i = 0; i < KEYWORD_COUNT; i++){
+        if(strcmp(lexeme, keywords[i].word) == 0){
+            return keywords[i].type;
+        }
+    }
+
+    // Check for single character delimeters
+    switch(lexeme[0]){
+        case '(': return Token_Delim_LPAR;
+        case ')': return Token_Delim_RPAR;
+        case '{': return Token_Delim_LBRAC;
+        case '}': return Token_Delim_RBRAC;
+        case '[': return Token_Delim_LBRAK;
+        case ']': return Token_Delim_RBRAK;
+        case ',': return Token_Delim_Comma;
+        case '\'': return Token_Delim_SQuote;
+        case '"': return Token_Delim_DQuote;
+        case '.': return Token_Delim_Period;
+        case '+': return Token_Arithmetic_Operator;
+        case '*': return Token_Arithmetic_Operator;
+        case '/': return Token_Arithmetic_Operator;
+        case '-': return Token_Arithmetic_Operator;
+        case '=': return Token_Assignment_Operator;
+        case '%': return Token_Arithmetic_Operator;
+        case '!': return Token_Boolean_Operator;
+        case '<': return Token_Boolean_Operator;
+        case '>': return Token_Boolean_Operator;
+        default: break;
+    }
+
+    return Token_Identifier; // Default to identifier
 }
