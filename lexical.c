@@ -67,7 +67,7 @@ typedef struct{
     Token_Type type;
 } Keyword;
 
-// Lookup Table
+// Lookup Table for keywords
 Keyword keywords[] = {
     {"if", Token_Keyword_If},
     {"else", Token_Keyword_Else},
@@ -110,10 +110,57 @@ typedef enum{
     STATE_DONE,
 } AutomatonState;
 
+// Lookup Table for string representation of token types; PURELY FOR DEBUGGING AND OUTPUT PURPOSES
+const char* tokenTypeStrings[] = {
+    "Identifier",
+    "Character",
+    "String",
+    "Number",
+    "Operator",
+    "CodeEnd",
+    "Unknown",
+    "Delimeter",
+    "Comment",
+    "Arithmetic_Operator",
+    "Arithmetic_Operator_DIV",
+    "Boolean_Operator",
+    "Boolean_Operator_AND",
+    "Boolean_Operator_OR",
+    "Assignment_Operator",
+    "Builtin_Constant",
+    "Keyword_If",
+    "Keyword_Else",
+    "Keyword_ElseIf",
+    "Keyword_For",
+    "Keyword_For_In",
+    "Keyword_For_Range",
+    "Keyword_Int",
+    "Keyword_Decimal",
+    "Keyword_Char",
+    "Keyword_String",
+    "Keyword_Boolean",
+    "Keyword_Read",
+    "Keyword_Write",
+    "Reserved_True",
+    "Reserved_False",
+    "Reserved_Null",
+    "Noise_Do",
+    "Delim_LPAR",
+    "Delim_RPAR",
+    "Delim_LBRAC",
+    "Delim_RBRAC",
+    "Delim_LBRAK",
+    "Delim_RBRAK",
+    "Delim_Comma",
+    "Delim_SQuote",
+    "Delim_DQuote",
+    "Delim_Period"
+};
+
 // Function Prototypes
 Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
-void outputToken(Token token);
+const char* outputToken(Token token);
 
 int main(){
     printf("Hello, world!\n");
@@ -139,10 +186,10 @@ Token getNextToken(FILE* srcFile){
                 }
                 else token.lexeme[lexemeIndex++] = ch; // Add character to lexeme
 
-                if(isalpha(ch) || ch == '_') currentState = STATE_IN_IDENTIFIER; // Identifier state
-                else if(isdigit(ch)) currentState = STATE_IN_NUMBER; // Number state
-                else if(ch == '"') currentState = STATE_IN_STRING; // String state
-                else if(ch == '\'') currentState = STATE_IN_CHAR; // Character state
+                if(isalpha(ch) || ch == '_') currentState = STATE_IN_IDENTIFIER;
+                else if(isdigit(ch)) currentState = STATE_IN_NUMBER;
+                else if(ch == '"') currentState = STATE_IN_STRING;
+                else if(ch == '\'') currentState = STATE_IN_CHAR;
                 else if(ch == '~'){ // Comment state
                     int next = fgetc(srcFile);
                     if(next == '/'){
@@ -152,12 +199,12 @@ Token getNextToken(FILE* srcFile){
                     }
                     else{
                         token.lexeme[lexemeIndex++] = ch; // Add character to comment
-                        ungetc(next, srcFile); // Put back the non-comment character
+                        ungetc(next, srcFile); // Put back the non-comment character; still a comment, but not part of the operator
                         currentState = STATE_IN_SINGLE_LINE_COMMENT;
                     }
                 }
-                else if(strchr("+-*=%!<>", ch)) currentState = STATE_IN_OPERATOR; // Operator state
-                else if(strchr("(){}[],.", ch)) currentState = STATE_IN_DELIMETER; // Delimeter state
+                else if(strchr("+-*=%!<>", ch)) currentState = STATE_IN_OPERATOR;
+                else if(strchr("(){}[],.", ch)) currentState = STATE_IN_DELIMETER;
                 else {
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = Token_Unknown;
@@ -342,7 +389,7 @@ Token getNextToken(FILE* srcFile){
 }
 
 Token_Type getlexemeType(const char* lexeme){
-    // Check if lexeme is a keyword
+    // Check if lexeme is a keyword; STATE_IN_IDENTIFIER only
     for(int i = 0; i < KEYWORD_COUNT; i++){
         if(strcmp(lexeme, keywords[i].word) == 0){
             return keywords[i].type;
@@ -375,4 +422,18 @@ Token_Type getlexemeType(const char* lexeme){
     }
     
     return Token_Identifier; // Default to identifier
+}
+
+const char* outputToken(Token token){
+    static char output[512];
+    snprintf(output, sizeof(output), "'%s'\t%s\t%d", 
+             token.lexeme, tokenTypeStrings[token.type], token.line_number);
+
+    /* Return the formatted string
+    Example Output:
+    'if'    Keyword_If    3
+
+    USE DIRECTLY FOR PRINTING OR WHEN OUTPUTING TO SYMBOL TABLE
+    */
+    return output;
 }
