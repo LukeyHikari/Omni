@@ -161,86 +161,46 @@ const char* tokenTypeStrings[] = {
 Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
 const char* outputToken(Token token);
-
-static bool HasOmniExtension (const char* filename){
-    if (filename == NULL) {
-        return false;
-    }
-    
-    const char* ext = strrchr (filename, '.');
-    if (ext != NULL && strcmp (ext, ".omni") == 0){
-        return true;
-    }
-
-    if (strlen(ext) != 5) { //Checking for char length of ".omni"
-        return false;
-    }
-
-    // Case-insensitive comparison for ".omni"
-    return (tolower((unsigned char)ext[1]) == 'o' &&
-            tolower((unsigned char)ext[2]) == 'm' &&
-            tolower((unsigned char)ext[3]) == 'n' &&
-            tolower((unsigned char)ext[4]) == 'i');
-}
-
-//Display error message and exit
-static void ErrorAndExit(const char* message) {
-    fprintf(stderr, "\n**************************************************\n");
-    fprintf(stderr, "*** ERROR: %s\n", message);
-    fprintf(stderr, "*** This program only accepts files with the '.omni' extension.\n");
-    fprintf(stderr, "**************************************************\n");
-    exit(EXIT_FAILURE);
-}
-
-//Open the .omni file or show error and exit
-static FILE* OpenOmniFile (const char* filename) {
-    if (!HasOmniExtension(filename)) { //Verify file extension
-        ErrorAndExit("Invalid file type");
-    }
-
-    FILE* f = fopen(filename, "rb"); //Try opening the file for reading (binary mode)
-    if (!f) {
-        char buf[256];
-        snprintf(buf, sizeof(buf), "Failed to open the file: %s", filename);
-        ErrorAndExit(buf);
-    }
-    return f; //Return the opened file pointer
-}
+static bool hasOmniExtension (const char* filename);
+static FILE* openOmniFile (const char* filename);
+static void errorAndExit(const char* message);
 
 int main(int argc, char *argv[]) {
-    // Expect filename argument
+    // Expect filename argument; terminal usage: ./lexical_analyzer <file.omni>
     if (argc < 2) {
         printf("Usage: %s <file.omni>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
     const char* filename = argv[1];
-    FILE* src = OpenOmniFile(filename);  //Handles both checking + opening of the file
+    FILE* src = openOmniFile(filename);  //Handles both checking + opening of the file
     printf("Processing file: %s\n\n", filename);
 
-    Token t;
+    Token token;
     int token_count = 0;
 
     do {
-        t = getNextToken(src);
+        token = getNextToken(src);
 
         //Stop on EOF or unknown token
-        if (t.type == Token_CodeEnd || t.type == Token_Unknown)
+        if (token.type == Token_CodeEnd || token.type == Token_Unknown)
             break;
 
-        printf("%s\n", outputToken(t));
+        printf("%s\n", outputToken(token));
         token_count++;
 
     } while (1);
 
-    if (t.type == Token_Unknown) {
-        printf("\nEncountered unknown token: %s\n", t.lexeme);
-    }
+    // Show unknown token error if encountered
+    if (token.type == Token_Unknown) printf("\nEncountered unknown token: %s\n", token.lexeme);
 
+    // Summary
     printf("\nProcessed %d tokens\n", token_count);
 
     fclose(src);
-    return (t.type == Token_Unknown) ? EXIT_FAILURE : EXIT_SUCCESS;
+
+    // Return success if no unknown tokens were found
+    return (token.type == Token_Unknown) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 Token getNextToken(FILE* srcFile){
@@ -512,4 +472,43 @@ const char* outputToken(Token token){
     USE DIRECTLY FOR PRINTING OR WHEN OUTPUTING TO SYMBOL TABLE
     */
     return output;
+}
+
+static bool hasOmniExtension (const char* filename){
+    // Check if a filename is provided
+    if (filename == NULL) return false;
+
+    // Get the file extension
+    const char* ext = strrchr (filename, '.');
+
+    // Checking for char length of ".omni"
+    if (strlen(ext) != 5) return false; 
+
+    // Compare the extension with ".omni"
+    if (ext != NULL && strcmp (ext, ".omni") == 0) return true;     
+    else return false;  
+}
+
+//Display error message and exit
+static void errorAndExit(const char* message) {
+    fprintf(stderr, "\n**************************************************\n");
+    fprintf(stderr, "*** ERROR: %s\n", message);
+    fprintf(stderr, "*** This program only accepts files with the '.omni' extension.\n");
+    fprintf(stderr, "**************************************************\n");
+    exit(EXIT_FAILURE);
+}
+
+//Open the .omni file or show error and exit
+static FILE* openOmniFile (const char* filename) {
+    //Verify file extension
+    if (!hasOmniExtension(filename)) errorAndExit("Invalid file type");
+
+    //Try opening the file for reading (binary mode)
+    FILE* file = fopen(filename, "rb"); 
+    if (!file) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "Failed to open the file: %s", filename);
+        errorAndExit(buf);
+    }
+    return file; //Return the opened file pointer
 }
