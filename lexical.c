@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define MAX_LEXEME_LENGTH 256
-#define KEYWORD_COUNT 16 // Total number of keywords; can be made dynamic if needed
+#define KEYWORD_COUNT (sizeof(keywords) / sizeof(Keyword)) 
 
 // Token Type Enumeration
 typedef enum {
