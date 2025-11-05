@@ -101,6 +101,8 @@ typedef enum{
     STATE_IN_STRING_ESCAPE,
     STATE_IN_SINGLE_LINE_COMMENT,
     STATE_IN_BLOCK_COMMENT,
+    STATE_IN_EQUAL,
+    STATE_IN_BOOL_OPERATOR,
     STATE_DONE,
 } AutomatonState;
 
@@ -163,7 +165,9 @@ Token getNextToken(FILE* srcFile){
             case STATE_IN_IDENTIFIER: // Identifier state
                 if(isalnum(ch) || ch == '_'){
                     token.lexeme[lexemeIndex++] = ch;
-                } else {
+                }
+                
+                else {
                     ungetc(ch, srcFile); // Put back the non-identifier character
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = getlexemeType(token.lexeme);
@@ -250,17 +254,74 @@ Token getNextToken(FILE* srcFile){
                 break;
             #pragma endregion
 
-            case STATE_IN_OPERATOR: // Operator state (not implemented)
-                // Handle multi-character operators here
-                break;
-
-            case STATE_IN_DELIMETER: // Delimeter state (not implemented)
+            #pragma region Delimeter State
+            case STATE_IN_DELIMETER: // Delimeter state 
                 if(strchr("(){}[],.", ch)){
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = getlexemeType(token.lexeme);
                     return token;
                 }
                 break;
+            #pragma endregion
+
+            #pragma region Operator States
+            case STATE_IN_OPERATOR:
+                switch(ch){
+                    case '+':
+                    case '-':
+                    case '*':
+                    case '%':
+                    case '/':
+                    case '^':
+                        token.lexeme[lexemeIndex++] = ch;
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Arithmetic_Operator;
+                        return token;
+                    case '=':
+                        currentState = STATE_IN_EQUAL;
+                        token.lexeme[lexemeIndex++] = ch;
+                        break;
+                    case '!':
+                    case '<':
+                    case '>':
+                        currentState = STATE_IN_BOOL_OPERATOR;
+                        token.lexeme[lexemeIndex++] = ch;
+                        break;
+                    default:
+                    break;
+                }
+            break;
+
+            case STATE_IN_EQUAL:
+                switch(ch){
+                    case '=':
+                        token.lexeme[lexemeIndex++] = ch;
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Boolean_Operator;
+                        return token;
+                    default:
+                        ungetc(ch, srcFile); // Put back the non-equal character
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = getlexemeType(token.lexeme);
+                        return token;
+                }
+                break;
+            
+            case STATE_IN_BOOL_OPERATOR:
+                switch(ch){
+                    case '=':
+                        token.lexeme[lexemeIndex++] = ch;
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Boolean_Operator;
+                        return token;
+                    default:
+                        ungetc(ch, srcFile); // Put back the non-operator character
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = getlexemeType(token.lexeme);
+                        return token;
+                }
+                break;
+            #pragma endregion
 
             case STATE_DONE: // End of file state
                 token.type = Token_CodeEnd;
@@ -298,13 +359,15 @@ Token_Type getlexemeType(const char* lexeme){
         case '*': return Token_Arithmetic_Operator;
         case '/': return Token_Arithmetic_Operator;
         case '-': return Token_Arithmetic_Operator;
-        case '=': return Token_Assignment_Operator;
+        case '^': return Token_Arithmetic_Operator;
         case '%': return Token_Arithmetic_Operator;
+        case '=': return Token_Assignment_Operator;
         case '!': return Token_Boolean_Operator;
         case '<': return Token_Boolean_Operator;
         case '>': return Token_Boolean_Operator;
         default: break;
     }
+    
 
     return Token_Identifier; // Default to identifier
 }
