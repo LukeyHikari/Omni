@@ -1,0 +1,13 @@
+LEXEME               TOKEN_TYPE                     LINE
+------------------------------------------------------------
+'int'	Keyword_Int	1
+'x'	Identifier	1
+'=='	Assignment_Operator	1
+'4.567'	Number	1
+'char'	Keyword_Char	1
+'b'	Identifier	2
+'z'	Identifier	2
+'=+'	Arithmetic_Operator	3
+'y'	Identifier	3
+'*/'	Arithmetic_Operator	3
+'3'	Number	3

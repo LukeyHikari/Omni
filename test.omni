@@ -1,0 +1,4 @@
+int x = 5
+decimal y = 4.567
+char b
+z = ( x + y * 2 ) / 3

@@ -162,10 +162,102 @@ Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
 const char* outputToken(Token token);
 
-int main(){
-    printf("Hello, world!\n");
-    return 0;
+static bool HasOmniExtension (const char* filename){
+    if (filename == NULL) {
+        return false;
+    }
+    
+    const char* ext = strrchr (filename, '.');
+    if (ext != NULL && strcmp (ext, ".omni") == 0){
+        return true;
+    }
+
+    if (strlen(ext) != 5) { //Checking for char length of ".omni"
+        return false;
+    }
+
+    // Case-insensitive comparison for ".omni"
+    return (tolower((unsigned char)ext[1]) == 'o' &&
+            tolower((unsigned char)ext[2]) == 'm' &&
+            tolower((unsigned char)ext[3]) == 'n' &&
+            tolower((unsigned char)ext[4]) == 'i');
 }
+
+//Display error message and exit
+static void ErrorAndExit(const char* message) {
+    fprintf(stderr, "\n**************************************************\n");
+    fprintf(stderr, "*** ERROR: %s\n", message);
+    fprintf(stderr, "*** This program only accepts files with the '.omni' extension.\n");
+    fprintf(stderr, "**************************************************\n");
+    exit(EXIT_FAILURE);
+}
+
+//Open the .omni file or show error and exit
+static FILE* OpenOmniFile (const char* filename) {
+    if (!HasOmniExtension(filename)) { //Verify file extension
+        ErrorAndExit("Invalid file type");
+    }
+
+    FILE* f = fopen(filename, "rb"); //Try opening the file for reading (binary mode)
+    if (!f) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "Failed to open the file: %s", filename);
+        ErrorAndExit(buf);
+    }
+    return f; //Return the opened file pointer
+}
+
+int main(int argc, char *argv[]) {
+    // Expect filename argument
+    if (argc < 2) {
+        printf("Usage: %s <file.omni>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    const char* filename = argv[1];
+    FILE* src = OpenOmniFile(filename);  //Handles both checking + opening of the file
+    printf("Processing file: %s\n\n", filename);
+
+    // Open the output file
+    FILE* outFile = fopen("symbol_table.txt", "w");
+    if (outFile == NULL) {
+    perror("Error opening symbol_table.txt");
+    fclose(src);
+    return EXIT_FAILURE;
+    }
+
+    // Write a header to the symbol table
+    fprintf(outFile, "%-20s %-30s %s\n", "LEXEME", "TOKEN_TYPE", "LINE");
+    fprintf(outFile, "------------------------------------------------------------\n");
+
+    Token t;
+    int token_count = 0;
+
+    do {
+        t = getNextToken(src);
+
+        //Stop on EOF or unknown token
+        if (t.type == Token_CodeEnd || t.type == Token_Unknown)
+            break;
+
+        printf("%s\n", outputToken(t));
+        fprintf(outFile, "%s\n", outputToken(t));
+        token_count++;
+
+    } while (1);
+
+    if (t.type == Token_Unknown) {
+        printf("\nEncountered unknown token: %s\n", t.lexeme);
+    }
+
+    printf("\nProcessed %d tokens\n", token_count);
+
+    fclose(src);
+    fclose(outFile);
+    printf("\nSymbol table successfully saved to 'symbol_table.txt'\n");
+    return (t.type == Token_Unknown) ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
 
 Token getNextToken(FILE* srcFile){
     Token token;
@@ -173,7 +265,8 @@ Token getNextToken(FILE* srcFile){
     char ch; // Current character
     int lexemeIndex = 0; // Index for lexeme
     bool decimalPointEncountered = false; // Flag to track if a decimal point has been encountered in a number
-    token.line_number = 1; // Initialize line number
+    static int current_line = 1; // Use a static variable to track line
+    token.line_number = current_line; // Set token's line number
     memset(token.lexeme, 0, MAX_LEXEME_LENGTH); // Clear lexeme buffer
 
     while((ch = fgetc(srcFile)) != EOF){
@@ -181,7 +274,7 @@ Token getNextToken(FILE* srcFile){
             #pragma region Start State
             case STATE_START: // Start state
                 if(isspace(ch)){
-                    if(ch == '\n') token.line_number++;
+                    if(ch == '\n') current_line++;
                     continue; // Ignore whitespace
                 }
                 else token.lexeme[lexemeIndex++] = ch; // Add character to lexeme
@@ -204,7 +297,7 @@ Token getNextToken(FILE* srcFile){
                     }
                 }
                 else if(strchr("+-*=%!<>", ch)) currentState = STATE_IN_OPERATOR;
-                else if(strchr("(){}[],.", ch)) currentState = STATE_IN_DELIMETER;
+                else if(strchr("(){}[],.;", ch)) currentState = STATE_IN_DELIMETER;
                 else {
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = Token_Unknown;
@@ -300,7 +393,7 @@ Token getNextToken(FILE* srcFile){
                     return token;
                 }
                 else if(ch == '\n') {
-                    token.line_number++;
+                    current_line++;
                     token.lexeme[lexemeIndex++] = ch; // Add character to comment
                 }
                 else {
@@ -385,6 +478,9 @@ Token getNextToken(FILE* srcFile){
         }
     }
 
+    token.type = Token_CodeEnd;
+    strcpy(token.lexeme, "EOF");
+    token.line_number = current_line; // Use our static line counter
     return token;
 }
 
