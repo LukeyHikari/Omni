@@ -174,6 +174,18 @@ int main(int argc, char *argv[]) {
     FILE* src = openOmniFile(filename);  //Handles both checking + opening of the file
     printf("Processing file: %s\n\n", filename);
 
+    // Open the output file
+    FILE* outFile = fopen("symbol_table.txt", "w");
+    if (outFile == NULL) {
+    perror("Error opening symbol_table.txt");
+    fclose(src);
+    return EXIT_FAILURE;
+    }
+
+    // Write a header to the symbol table
+    fprintf(outFile, "%-20s %-30s %s\n", "LEXEME", "TOKEN_TYPE", "LINE");
+    fprintf(outFile, "------------------------------------------------------------\n");
+
     Token token;
     int token_count = 0;
 
