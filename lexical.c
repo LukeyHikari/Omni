@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define MAX_LEXEME_LENGTH 256
-#define KEYWORD_COUNT (sizeof(keywords) / sizeof(Keyword)) 
+#define KEYWORD_COUNT 19
 
 // Token Type Enumeration
 typedef enum {
@@ -374,7 +374,6 @@ Token getNextToken(FILE* srcFile){
                         return token;
                     case '=':
                         currentState = STATE_IN_EQUAL;
-                        token.lexeme[lexemeIndex++] = ch;
                         break;
                     case '!':
                     case '<':
@@ -387,20 +386,25 @@ Token getNextToken(FILE* srcFile){
                 }
             break;
 
-            case STATE_IN_EQUAL:
-                switch(ch){
+            case STATE_IN_EQUAL:{
+                int next = fgetc(srcFile);
+                switch(next){
                     case '=':
                         token.lexeme[lexemeIndex++] = ch;
+                        token.lexeme[lexemeIndex++] = next;
                         token.lexeme[lexemeIndex] = '\0';
                         token.type = Token_Boolean_Operator;
                         return token;
                     default:
-                        ungetc(ch, srcFile); // Put back the non-equal character
+                        ungetc(next, srcFile); // Put back the non-equal character
                         token.lexeme[lexemeIndex] = '\0';
                         token.type = getlexemeType(token.lexeme);
-                        return token;
+                        break;
                 }
-                break;
+                    currentState = STATE_START;
+                    return token;
+                    break;
+            }
             
             case STATE_IN_BOOL_OPERATOR:
                 switch(ch){
