@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
             break;
 
         printf("%s\n", outputToken(token));
+        fprintf(outFile, "%s\n", outputToken(token)); // Write to symbol table file
         token_count++;
 
     } while (1);
