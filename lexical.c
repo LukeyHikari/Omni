@@ -162,9 +162,85 @@ Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
 const char* outputToken(Token token);
 
-int main(){
-    printf("Hello, world!\n");
-    return 0;
+static bool HasOmniExtension (const char* filename){
+    if (filename == NULL) {
+        return false;
+    }
+    
+    const char* ext = strrchr (filename, '.');
+    if (ext != NULL && strcmp (ext, ".omni") == 0){
+        return true;
+    }
+
+    if (strlen(ext) != 5) { //Checking for char length of ".omni"
+        return false;
+    }
+
+    // Case-insensitive comparison for ".omni"
+    return (tolower((unsigned char)ext[1]) == 'o' &&
+            tolower((unsigned char)ext[2]) == 'm' &&
+            tolower((unsigned char)ext[3]) == 'n' &&
+            tolower((unsigned char)ext[4]) == 'i');
+}
+
+//Display error message and exit
+static void ErrorAndExit(const char* message) {
+    fprintf(stderr, "\n**************************************************\n");
+    fprintf(stderr, "*** ERROR: %s\n", message);
+    fprintf(stderr, "*** This program only accepts files with the '.omni' extension.\n");
+    fprintf(stderr, "**************************************************\n");
+    exit(EXIT_FAILURE);
+}
+
+//Open the .omni file or show error and exit
+static FILE* OpenOmniFile (const char* filename) {
+    if (!HasOmniExtension(filename)) { //Verify file extension
+        ErrorAndExit("Invalid file type");
+    }
+
+    FILE* f = fopen(filename, "rb"); //Try opening the file for reading (binary mode)
+    if (!f) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "Failed to open the file: %s", filename);
+        ErrorAndExit(buf);
+    }
+    return f; //Return the opened file pointer
+}
+
+int main(int argc, char *argv[]) {
+    // Expect filename argument
+    if (argc < 2) {
+        printf("Usage: %s <file.omni>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    const char* filename = argv[1];
+    FILE* src = OpenOmniFile(filename);  //Handles both checking + opening of the file
+    printf("Processing file: %s\n\n", filename);
+
+    Token t;
+    int token_count = 0;
+
+    do {
+        t = getNextToken(src);
+
+        //Stop on EOF or unknown token
+        if (t.type == Token_CodeEnd || t.type == Token_Unknown)
+            break;
+
+        printf("%s\n", outputToken(t));
+        token_count++;
+
+    } while (1);
+
+    if (t.type == Token_Unknown) {
+        printf("\nEncountered unknown token: %s\n", t.lexeme);
+    }
+
+    printf("\nProcessed %d tokens\n", token_count);
+
+    fclose(src);
+    return (t.type == Token_Unknown) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 Token getNextToken(FILE* srcFile){
