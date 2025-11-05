@@ -29,6 +29,8 @@ typedef enum {
     Token_Keyword_Else,
     Token_Keyword_ElseIf,
     Token_Keyword_For,
+    Token_Keyword_For_In,
+    Token_Keyword_For_Range,
     Token_Keyword_Int,
     Token_Keyword_Decimal,
     Token_Keyword_Char,
@@ -71,6 +73,8 @@ Keyword keywords[] = {
     {"else", Token_Keyword_Else},
     {"elseif", Token_Keyword_ElseIf},
     {"for", Token_Keyword_For},
+    {"in", Token_Keyword_For_In},
+    {"range", Token_Keyword_For_Range},
     {"int", Token_Keyword_Int},
     {"decimal", Token_Keyword_Decimal},
     {"char", Token_Keyword_Char},
@@ -83,8 +87,8 @@ Keyword keywords[] = {
     {"null", Token_Reserved_Null},
     {"do", Token_Noise_Do},
     {"DIV", Token_Arithmetic_Operator_DIV},
-    {"OR", Token_Boolean_Operator_OR},
-    {"AND", Token_Boolean_Operator_AND}
+    {"or", Token_Boolean_Operator_OR},
+    {"and", Token_Boolean_Operator_AND}
 };
 
 //Automaton States
@@ -121,6 +125,7 @@ Token getNextToken(FILE* srcFile){
     AutomatonState currentState = STATE_START;
     char ch; // Current character
     int lexemeIndex = 0; // Index for lexeme
+    bool decimalPointEncountered = false; // Flag to track if a decimal point has been encountered in a number
     token.line_number = 1; // Initialize line number
     memset(token.lexeme, 0, MAX_LEXEME_LENGTH); // Clear lexeme buffer
 
@@ -155,8 +160,8 @@ Token getNextToken(FILE* srcFile){
                 else if(strchr("(){}[],.", ch)) currentState = STATE_IN_DELIMETER; // Delimeter state
                 else {
                     token.lexeme[lexemeIndex] = '\0';
-                    token.type = getlexemeType(token.lexeme);
-                    return token; // Return single character tokens
+                    token.type = Token_Unknown;
+                    return token;
                 }
                 break;
             #pragma endregion
@@ -166,7 +171,6 @@ Token getNextToken(FILE* srcFile){
                 if(isalnum(ch) || ch == '_'){
                     token.lexeme[lexemeIndex++] = ch;
                 }
-                
                 else {
                     ungetc(ch, srcFile); // Put back the non-identifier character
                     token.lexeme[lexemeIndex] = '\0';
@@ -178,7 +182,11 @@ Token getNextToken(FILE* srcFile){
             
             #pragma region Number State
             case STATE_IN_NUMBER: // Number state
-                if(isdigit(ch) || ch == '.') token.lexeme[lexemeIndex++] = ch;
+                if(isdigit(ch)) token.lexeme[lexemeIndex++] = ch;
+                else if(ch == '.' && !decimalPointEncountered){ // Handle decimal point
+                    decimalPointEncountered = true; // Mark that a dot has been encountered
+                    token.lexeme[lexemeIndex++] = ch;
+                }
                 else { // Not a number character
                     ungetc(ch, srcFile); // Put back the non-number character
                     token.lexeme[lexemeIndex] = '\0';
@@ -188,7 +196,7 @@ Token getNextToken(FILE* srcFile){
                 break;
             #pragma endregion
             
-            #pragma region Sring and Char States
+            #pragma region String and Char States
             case STATE_IN_STRING:
                 if(ch != '"'){
                     token.lexeme[lexemeIndex++] = ch; // Add character to string
@@ -256,12 +264,9 @@ Token getNextToken(FILE* srcFile){
 
             #pragma region Delimeter State
             case STATE_IN_DELIMETER: // Delimeter state 
-                if(strchr("(){}[],.", ch)){
-                    token.lexeme[lexemeIndex] = '\0';
-                    token.type = getlexemeType(token.lexeme);
-                    return token;
-                }
-                break;
+                token.lexeme[lexemeIndex] = '\0';
+                token.type = getlexemeType(token.lexeme);
+                return token;
             #pragma endregion
 
             #pragma region Operator States
@@ -325,6 +330,7 @@ Token getNextToken(FILE* srcFile){
 
             case STATE_DONE: // End of file state
                 token.type = Token_CodeEnd;
+                strcpy(token.lexeme, "EOF");
                 return token;
             
             default:
@@ -343,7 +349,7 @@ Token_Type getlexemeType(const char* lexeme){
         }
     }
 
-    // Check for single character delimeters
+    // Check for single character delimeters and operators
     switch(lexeme[0]){
         case '(': return Token_Delim_LPAR;
         case ')': return Token_Delim_RPAR;
@@ -368,6 +374,5 @@ Token_Type getlexemeType(const char* lexeme){
         default: break;
     }
     
-
     return Token_Identifier; // Default to identifier
 }
