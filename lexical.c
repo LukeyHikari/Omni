@@ -317,6 +317,12 @@ Token getNextToken(FILE* srcFile){
             case STATE_IN_BLOCK_COMMENT: // Block comment state
                 if(ch == '/') {
                     int next = fgetc(srcFile);
+                    if(next == EOF){
+                        currentState = STATE_DONE;
+                        token.type = Token_Unknown;
+                        strcpy(token.lexeme, "Unclosed block comment");
+                        return token;
+                    }
                     if(next == '~'){
                         token.lexeme[lexemeIndex++] = ch; // Add character to comment
                         token.lexeme[lexemeIndex++] = next; // Add character to comment
@@ -325,21 +331,11 @@ Token getNextToken(FILE* srcFile){
                         token.lexeme[lexemeIndex] = '\0';
                         return token;
                     }
-                    currentState = STATE_IN_BLOCK_COMMENT; // Stay in block comment
                     ungetc(next, srcFile); // Go back to previous character, not end of comment
-                    token.lexeme[lexemeIndex++] = ch; // Add character to comment
+                    token.lexeme[lexemeIndex++] = ch; // Add / to comment if not end of comment 
                 }
-                else if (ch == EOF) {
-                    currentState = STATE_DONE;
-                    token.type = Token_Unknown;
-                    strcpy(token.lexeme, "Unclosed block comment");
-                    return token;
-                }
-                else if(ch == '\n') {
-                    token.line_number++;
-                    token.lexeme[lexemeIndex++] = ch; // Add character to comment
-                }
-                else {
+                else{
+                    if(ch == '\n') token.line_number++; // Add line number for new lines in comments
                     token.lexeme[lexemeIndex++] = ch; // Add character to comment
                 }
                 break;
