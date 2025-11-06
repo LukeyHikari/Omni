@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         token = getNextToken(src);
 
         // Stop on EOF or unknown token
-        if (token.type == Token_CodeEnd || token.type == Token_Unknown)
+        if (token.type == Token_CodeEnd /*|| token.type == Token_Unknown*/)
             break;
 
         //printf("%s\n", outputToken(token));
@@ -299,6 +299,7 @@ Token getNextToken(FILE* srcFile){
                     currentState = STATE_IN_DELIMETER;
                 }
                 else {
+                    token.lexeme[lexemeIndex++] = ch;
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = Token_Unknown;
                     currentState = STATE_START;
