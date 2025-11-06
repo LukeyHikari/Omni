@@ -46,8 +46,6 @@ typedef enum {
     Token_Delim_RPAR,
     Token_Delim_LBRAC,
     Token_Delim_RBRAC,
-    // Token_Delim_LBRAK,
-    // Token_Delim_RBRAK,
     Token_Delim_Comma,
     Token_Delim_SQuote,
     Token_Delim_DQuote,
@@ -146,9 +144,7 @@ const char* tokenTypeStrings[] = {
     "Delim_LPAR",
     "Delim_RPAR",
     "Delim_LBRAC",
-    // "Delim_RBRAC",
-    // "Delim_LBRAK",
-    "Delim_RBRAK",
+    "Delim_RBRAC",
     "Delim_Comma",
     "Delim_SQuote",
     "Delim_DQuote",
@@ -553,8 +549,6 @@ Token_Type getlexemeType(const char* lexeme){
         case ')': return Token_Delim_RPAR;
         case '{': return Token_Delim_LBRAC;
         case '}': return Token_Delim_RBRAC;
-        // case '[': return Token_Delim_LBRAK;
-        // case ']': return Token_Delim_RBRAK;
         case ',': return Token_Delim_Comma;
         case '\'': return Token_Delim_SQuote;
         case '"': return Token_Delim_DQuote;
