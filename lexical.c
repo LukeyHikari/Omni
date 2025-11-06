@@ -46,8 +46,8 @@ typedef enum {
     Token_Delim_RPAR,
     Token_Delim_LBRAC,
     Token_Delim_RBRAC,
-    Token_Delim_LBRAK,
-    Token_Delim_RBRAK,
+    // Token_Delim_LBRAK,
+    // Token_Delim_RBRAK,
     Token_Delim_Comma,
     Token_Delim_SQuote,
     Token_Delim_DQuote,
@@ -146,8 +146,8 @@ const char* tokenTypeStrings[] = {
     "Delim_LPAR",
     "Delim_RPAR",
     "Delim_LBRAC",
-    "Delim_RBRAC",
-    "Delim_LBRAK",
+    // "Delim_RBRAC",
+    // "Delim_LBRAK",
     "Delim_RBRAK",
     "Delim_Comma",
     "Delim_SQuote",
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write a header to the symbol table
-    fprintf(outFile, "%s\t%s\n", "LEXEME", "TOKEN_TYPE");
+    fprintf(outFile, "%-20s %-20s\n", "LEXEME", "TOKEN_TYPE");
     fprintf(outFile, "------------------------------------------------------------\n");
 
     Token token;
@@ -193,12 +193,15 @@ int main(int argc, char *argv[]) {
     do {
         token = getNextToken(src);
 
-        //Stop on EOF or unknown token
+        // Stop on EOF or unknown token
         if (token.type == Token_CodeEnd || token.type == Token_Unknown)
             break;
 
         //printf("%s\n", outputToken(token));
-        fprintf(outFile, "%s\n", outputToken(token)); // Write to symbol table file
+        // Output the token
+        fprintf(outFile, "%-20s %-20s\n",
+        (token.lexeme[0] == '\n' ? "\\n" : token.lexeme),
+        tokenTypeStrings[token.type]);
         token_count++;
 
     } while (1);
@@ -291,7 +294,7 @@ Token getNextToken(FILE* srcFile){
                     token.lexeme[lexemeIndex++] = ch; // Add character to operator
                     currentState = STATE_IN_OPERATOR;
                 }
-                else if(strchr("(){}[],.", ch)){
+                else if(strchr("(){},.", ch)){
                     token.lexeme[lexemeIndex++] = ch; // Add character to delimeter
                     currentState = STATE_IN_DELIMETER;
                 }
@@ -549,8 +552,8 @@ Token_Type getlexemeType(const char* lexeme){
         case ')': return Token_Delim_RPAR;
         case '{': return Token_Delim_LBRAC;
         case '}': return Token_Delim_RBRAC;
-        case '[': return Token_Delim_LBRAK;
-        case ']': return Token_Delim_RBRAK;
+        // case '[': return Token_Delim_LBRAK;
+        // case ']': return Token_Delim_RBRAK;
         case ',': return Token_Delim_Comma;
         case '\'': return Token_Delim_SQuote;
         case '"': return Token_Delim_DQuote;
