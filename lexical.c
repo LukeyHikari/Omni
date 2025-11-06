@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define MAX_LEXEME_LENGTH 256
-#define KEYWORD_COUNT 19
+#define KEYWORD_COUNT (sizeof(keywords) / sizeof(keywords[0]))
 
 // Token Type Enumeration
 typedef enum {
@@ -51,14 +51,16 @@ typedef enum {
     Token_Delim_Comma,
     Token_Delim_SQuote,
     Token_Delim_DQuote,
-    Token_Delim_Period
+    Token_Delim_Period,
+    Token_Delim_Newline,
+    Token_Delim_Space
 } Token_Type; 
 
 // Token Structure
 typedef struct {
     Token_Type type;
     char lexeme[MAX_LEXEME_LENGTH];
-    int line_number;
+    //int line_number;
 } Token;
 
 // Keyword Structure
@@ -79,7 +81,7 @@ Keyword keywords[] = {
     {"decimal", Token_Keyword_Decimal},
     {"char", Token_Keyword_Char},
     {"string", Token_Keyword_String},
-    {"boolean", Token_Keyword_Boolean},
+    {"bool", Token_Keyword_Boolean},
     {"read", Token_Keyword_Read},
     {"write", Token_Keyword_Write},
     {"true", Token_Reserved_True},
@@ -103,8 +105,6 @@ typedef enum{
     STATE_IN_STRING_ESCAPE,
     STATE_IN_SINGLE_LINE_COMMENT,
     STATE_IN_BLOCK_COMMENT,
-    STATE_IN_EQUAL,
-    STATE_IN_BOOL_OPERATOR,
     STATE_DONE,
 } AutomatonState;
 
@@ -152,7 +152,8 @@ const char* tokenTypeStrings[] = {
     "Delim_Comma",
     "Delim_SQuote",
     "Delim_DQuote",
-    "Delim_Period"
+    "Delim_Period",
+    "Delim_Newline"
 };
 
 // Function Prototypes
@@ -183,7 +184,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Write a header to the symbol table
-    fprintf(outFile, "%-20s %-30s %s\n", "LEXEME", "TOKEN_TYPE", "LINE");
+    fprintf(outFile, "%s\t%s\n", "LEXEME", "TOKEN_TYPE");
     fprintf(outFile, "------------------------------------------------------------\n");
 
     Token token;
@@ -196,7 +197,7 @@ int main(int argc, char *argv[]) {
         if (token.type == Token_CodeEnd || token.type == Token_Unknown)
             break;
 
-        printf("%s\n", outputToken(token));
+        //printf("%s\n", outputToken(token));
         fprintf(outFile, "%s\n", outputToken(token)); // Write to symbol table file
         token_count++;
 
@@ -217,44 +218,87 @@ int main(int argc, char *argv[]) {
 Token getNextToken(FILE* srcFile){
     Token token;
     AutomatonState currentState = STATE_START;
-    char ch; // Current character
+    int ch; // Current character
     int lexemeIndex = 0; // Index for lexeme
     bool decimalPointEncountered = false; // Flag to track if a decimal point has been encountered in a number
-    token.line_number = 1; // Initialize line number
     memset(token.lexeme, 0, MAX_LEXEME_LENGTH); // Clear lexeme buffer
 
-    while((ch = fgetc(srcFile)) != EOF){
+    //while((ch = fgetc(srcFile)) != EOF){
+    while(true){
+        ch = fgetc(srcFile);
+
+        // Debugger
+        // printf("Debug: Current State: %d, Read Char: '%c' (0x%02X)\n",
+        // currentState, (char)ch, (unsigned char)ch);
+        // int nextChar = fgetc(srcFile);
+        // printf("Debug: Next char:%c\n", nextChar);
+        // ungetc(nextChar, srcFile);
+
+        // Normalize NBSP (0xA0) to regular space; just in case auto treat as whitespace 
+        if (ch != EOF && (unsigned char)ch == 0xA0) ch = 0x20;
+
         switch(currentState){
             #pragma region Start State
             case STATE_START: // Start state
-                if(isspace(ch)){
-                    if(ch == '\n') token.line_number++;
-                    continue; // Ignore whitespace
+                if(ch == EOF) {
+                    token.type = Token_CodeEnd;
+                    strcpy(token.lexeme, "EOF");
+                    return token;
                 }
-                else token.lexeme[lexemeIndex++] = ch; // Add character to lexeme
-
-                if(isalpha(ch) || ch == '_') currentState = STATE_IN_IDENTIFIER;
-                else if(isdigit(ch)) currentState = STATE_IN_NUMBER;
-                else if(ch == '"') currentState = STATE_IN_STRING;
-                else if(ch == '\'') currentState = STATE_IN_CHAR;
+                if(isspace((unsigned char)ch)){
+                    if(ch == '\n'){ // Newline token
+                        token.lexeme[0] = ch;
+                        token.lexeme[1] = '\0';
+                        //token.line_number++; // Increment line number
+                        token.type = Token_Delim_Newline;
+                        currentState = STATE_START;
+                        return token;
+                    }
+                    currentState = STATE_START;
+                    continue; // Ignore whitespace
+                }   
+                else if(isalpha((unsigned char)ch) || ch == '_') {
+                    token.lexeme[lexemeIndex++] = ch; // Add character to identifier
+                    currentState = STATE_IN_IDENTIFIER;
+                }
+                else if(isdigit((unsigned char)ch)){
+                    token.lexeme[lexemeIndex++] = ch; // Add character to number
+                    currentState = STATE_IN_NUMBER;
+                }
+                else if(ch == '"'){
+                    token.lexeme[lexemeIndex++] = ch; // Add character to string
+                    token.type = Token_String;
+                    currentState = STATE_IN_STRING;
+                }
+                else if(ch == '\''){
+                    token.lexeme[lexemeIndex++] = ch; // Add character to char
+                    token.type = Token_Character;
+                    currentState = STATE_IN_CHAR;
+                }
                 else if(ch == '~'){ // Comment state
+                    token.lexeme[lexemeIndex++] = ch; // Add character to comment
                     int next = fgetc(srcFile);
                     if(next == '/'){
-                        token.lexeme[lexemeIndex++] = ch; // Add character to comment
                         token.lexeme[lexemeIndex++] = next; // Add character to comment
                         currentState = STATE_IN_BLOCK_COMMENT;
                     }
                     else{
-                        token.lexeme[lexemeIndex++] = ch; // Add character to comment
                         ungetc(next, srcFile); // Put back the non-comment character; still a comment, but not part of the operator
                         currentState = STATE_IN_SINGLE_LINE_COMMENT;
                     }
                 }
-                else if(strchr("+-*=%!<>", ch)) currentState = STATE_IN_OPERATOR;
-                else if(strchr("(){}[],.", ch)) currentState = STATE_IN_DELIMETER;
+                else if(strchr("+-*=/%!<>", ch)) {
+                    token.lexeme[lexemeIndex++] = ch; // Add character to operator
+                    currentState = STATE_IN_OPERATOR;
+                }
+                else if(strchr("(){}[],.", ch)){
+                    token.lexeme[lexemeIndex++] = ch; // Add character to delimeter
+                    currentState = STATE_IN_DELIMETER;
+                }
                 else {
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = Token_Unknown;
+                    currentState = STATE_START;
                     return token;
                 }
                 break;
@@ -263,91 +307,151 @@ Token getNextToken(FILE* srcFile){
             #pragma region Identifier State
             case STATE_IN_IDENTIFIER: // Identifier state
                 if(isalnum(ch) || ch == '_'){
-                    token.lexeme[lexemeIndex++] = ch;
+                    token.lexeme[lexemeIndex++] = ch; // Add valid identifier character to lexeme
                 }
-                else {
+                else{
                     ungetc(ch, srcFile); // Put back the non-identifier character
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = getlexemeType(token.lexeme);
                     return token;
                 }
-                break;
+
+            break;
             #pragma endregion
             
             #pragma region Number State
             case STATE_IN_NUMBER: // Number state
-                if(isdigit(ch)) token.lexeme[lexemeIndex++] = ch;
+                if(isdigit((unsigned char)ch)) token.lexeme[lexemeIndex++] = ch; // Add digits to the lexeme
                 else if(ch == '.' && !decimalPointEncountered){ // Handle decimal point
                     decimalPointEncountered = true; // Mark that a dot has been encountered
                     token.lexeme[lexemeIndex++] = ch;
                 }
-                else { // Not a number character
-                    ungetc(ch, srcFile); // Put back the non-number character
+                else if(ch == '.' && decimalPointEncountered){ // Second decimal point encountered; invalid number (unkown)
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Unknown;
+                    return token;
+                }
+                else if(ch == EOF){
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = Token_Number;
+                    return token;
+                }
+                else {
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Number;
+                    if(ch == '\n') ungetc(ch, srcFile); // Put back the newline character for next token
+                    else if(!isspace(ch)) ungetc(ch, srcFile);
                     return token;
                 }
                 break;
             #pragma endregion
             
             #pragma region String and Char States
-            case STATE_IN_STRING:
-                if(ch != '"'){
-                    token.lexeme[lexemeIndex++] = ch; // Add character to string
-                } 
-                else { // End of string
+            case STATE_IN_STRING:{
+                switch(ch){
+                    case '"': // End of string
+                        token.lexeme[lexemeIndex++] = ch; // Add closing quote
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_String;
+                        return token;
+                    case '\\': // Enter escape state; keep backslash so lexeme shows escape sequence (\n, \t, etc.)
+                        token.lexeme[lexemeIndex++] = '\\';
+                        currentState = STATE_IN_STRING_ESCAPE;
+                        break;
+                    case EOF: // Unclosed string via EOF
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Unknown;
+                        strcpy(token.lexeme, "Unclosed string literal");
+                        return token;
+                    default:
+                        /* Accepts actual newline characters inside the string (typed into the string i.e. "Hello \n world!")
+                        Also accepts other characters of the string*/
+                        token.lexeme[lexemeIndex++] = ch;
+                        token.type = Token_String;
+                        break;
+                }
+                break;
+            }
+
+            case STATE_IN_STRING_ESCAPE:
+                if(ch == EOF){ // Unclosed string via EOF
                     token.lexeme[lexemeIndex] = '\0';
-                    token.type = Token_String;
+                    token.type = Token_Unknown;
+                    strcpy(token.lexeme, "Unclosed string literal");
                     return token;
+                }
+                else { // Store escaped characters
+                    token.lexeme[lexemeIndex++] = ch;
+                    token.type = Token_String;
+                    currentState = STATE_IN_STRING;
                 }
                 break;
 
             case STATE_IN_CHAR:
-                if(ch != '\''){
-                    token.lexeme[lexemeIndex++] = ch; // Add character to char
-                } 
-                else { // End of character
-                    token.lexeme[lexemeIndex] = '\0';
-                    token.type = Token_Character;
-                    return token;
+                switch(ch){
+                    case '\'': // End of character
+                        token.lexeme[lexemeIndex++] = ch; // Add closing quote to char
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Character;
+                        return token;
+                    case '\n': // Newline in char
+                        ungetc(ch, srcFile); // Put back the newline character for next token
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Character;
+                        return token;
+                    case EOF: // EOF in char
+                        token.lexeme[lexemeIndex] = '\0';
+                        token.type = Token_Unknown;
+                        strcpy(token.lexeme, "Unclosed character literal");
+                        return token;
+                    default:
+                        token.lexeme[lexemeIndex++] = ch; // Add character to char
+                        token.type = Token_Character;
+                        break;
                 }
                 break;
             #pragma endregion
             
             #pragma region Comment States
             case STATE_IN_SINGLE_LINE_COMMENT:
-                if (ch == '\n' || ch == EOF) {
-                    currentState = STATE_DONE;
-                    token.type = Token_Comment;
-                    token.lexeme[lexemeIndex] = '\0';
-                    return token;
-                } 
-                else token.lexeme[lexemeIndex++] = ch; // Add character to comment
-                break;
-
-            case STATE_IN_BLOCK_COMMENT: // Block comment state
-                if(ch == '/') {
-                    int next = fgetc(srcFile);
-                    if(next == EOF){
-                        currentState = STATE_DONE;
-                        token.type = Token_Unknown;
-                        strcpy(token.lexeme, "Unclosed block comment");
-                        return token;
-                    }
-                    if(next == '~'){
-                        token.lexeme[lexemeIndex++] = ch; // Add character to comment
-                        token.lexeme[lexemeIndex++] = next; // Add character to comment
-                        currentState = STATE_DONE;
+                switch(ch){
+                    case '\n': case EOF: // End of single-line comment
+                        ungetc(ch, srcFile);
                         token.type = Token_Comment;
                         token.lexeme[lexemeIndex] = '\0';
                         return token;
-                    }
-                    ungetc(next, srcFile); // Go back to previous character, not end of comment
-                    token.lexeme[lexemeIndex++] = ch; // Add / to comment if not end of comment 
+                    default:
+                        token.lexeme[lexemeIndex++] = ch; // Add character to comment
+                        break;
                 }
-                else{
-                    if(ch == '\n') token.line_number++; // Add line number for new lines in comments
-                    token.lexeme[lexemeIndex++] = ch; // Add character to comment
+                break;
+
+            case STATE_IN_BLOCK_COMMENT: // Block comment state
+                switch(ch){
+                    case '/':{ // Potential end of block comment
+                        int next = fgetc(srcFile);
+                        switch(next){
+                            case EOF:
+                                token.type = Token_Unknown;
+                                strcpy(token.lexeme, "Unclosed block comment");
+                                return token;
+                            case '~':
+                                token.lexeme[lexemeIndex++] = ch; // Add / character to comment
+                                token.lexeme[lexemeIndex++] = next; // Add ~ character to comment
+                                token.type = Token_Comment;
+                                token.lexeme[lexemeIndex] = '\0';
+                                return token;
+                            default:
+                                ungetc(next, srcFile); // Go back to previous character, not end of comment
+                                token.lexeme[lexemeIndex++] = ch; // Add / to comment if not end of comment
+                                break;
+                        }
+                        break;
+                    }
+                    default:
+                        token.lexeme[lexemeIndex++] = ch; // Add character to comment
+                        break;
+
                 }
                 break;
             #pragma endregion
@@ -356,81 +460,69 @@ Token getNextToken(FILE* srcFile){
             case STATE_IN_DELIMETER: // Delimeter state 
                 token.lexeme[lexemeIndex] = '\0';
                 token.type = getlexemeType(token.lexeme);
+                if(ch == '\n' || !isspace(ch)){
+                    ungetc(ch, srcFile); // Put back newline & non-delimeter character for next token
+                }
                 return token;
             #pragma endregion
 
             #pragma region Operator States
-            case STATE_IN_OPERATOR:
-                switch(ch){
-                    case '+':
-                    case '-':
-                    case '*':
-                    case '%':
-                    case '/':
-                    case '^':
-                        token.lexeme[lexemeIndex++] = ch;
-                        token.lexeme[lexemeIndex] = '\0';
-                        token.type = Token_Arithmetic_Operator;
-                        return token;
-                    case '=':
-                        currentState = STATE_IN_EQUAL;
-                        break;
-                    case '!':
-                    case '<':
-                    case '>':
-                        currentState = STATE_IN_BOOL_OPERATOR;
-                        token.lexeme[lexemeIndex++] = ch;
-                        break;
-                    default:
-                    break;
-                }
-            break;
-
-            case STATE_IN_EQUAL:{
-                int next = fgetc(srcFile);
-                switch(next){
-                    case '=':
-                        token.lexeme[lexemeIndex++] = ch;
-                        token.lexeme[lexemeIndex++] = next;
-                        token.lexeme[lexemeIndex] = '\0';
-                        token.type = Token_Boolean_Operator;
-                        return token;
-                    default:
-                        ungetc(next, srcFile); // Put back the non-equal character
-                        token.lexeme[lexemeIndex] = '\0';
-                        token.type = getlexemeType(token.lexeme);
-                        break;
-                }
+            case STATE_IN_OPERATOR: // Operator state
+                if(isspace((unsigned char)ch)) {
+                    // Handle space by returning current token and resetting state
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = getlexemeType(token.lexeme);
+                    ungetc(ch, srcFile); // Put back the space character
                     currentState = STATE_START;
                     return token;
-                    break;
-            }
-            
-            case STATE_IN_BOOL_OPERATOR:
-                switch(ch){
-                    case '=':
-                        token.lexeme[lexemeIndex++] = ch;
-                        token.lexeme[lexemeIndex] = '\0';
-                        token.type = Token_Boolean_Operator;
-                        return token;
-                    default:
-                        ungetc(ch, srcFile); // Put back the non-operator character
-                        token.lexeme[lexemeIndex] = '\0';
-                        token.type = getlexemeType(token.lexeme);
-                        return token;
                 }
-                break;
+                
+                switch(ch){
+                    case '=': case '!': case '<': case '>':
+                    case '+': case '-': case '*': case '/': case '^':
+                    token.lexeme[lexemeIndex++] = ch;
+
+                    int next = fgetc(srcFile);
+                    //printf("Debug: Next: %c\n", next);
+
+                    switch(next){
+                        case '=':
+                            token.lexeme[lexemeIndex++] = next;
+                        break;
+                        default:
+                            ungetc(next, srcFile);
+                        break;
+                    }
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = getlexemeType(token.lexeme);
+                    break;
+                }
+
+                // Put back non-operator character
+                ungetc(ch, srcFile);
+                token.lexeme[lexemeIndex] = '\0';
+                token.type = getlexemeType(token.lexeme);
+
+                currentState = STATE_START;
+                return token;
+
+            break;
             #pragma endregion
 
-            case STATE_DONE: // End of file state
-                token.type = Token_CodeEnd;
-                strcpy(token.lexeme, "EOF");
-                return token;
+            // case STATE_DONE: // End of file state
+            //     token.type = Token_CodeEnd;
+            //     strcpy(token.lexeme, "EOF");
+            //     return token;
             
             default:
                 break;
         }
     }
+
+    // if(ch == EOF){
+    //     token.type = Token_CodeEnd;
+    //     strcpy(token.lexeme, "EOF");
+    // }
 
     return token;
 }
@@ -443,7 +535,15 @@ Token_Type getlexemeType(const char* lexeme){
         }
     }
 
-    // Check for single character delimeters and operators
+    // Can use in the future for Numbers
+    // size_t len = strlen(lexeme);
+    // bool isNumber = true;
+    // for (size_t i = 0; i < len; ++i) {
+    //     if (!isdigit((unsigned char)lexeme[i]) && lexeme[i] != '.') { isNumber = false; break; }
+    // }
+    // if (isNumber) return Token_Number;
+
+    // Check for tokens for delimeters and operators
     switch(lexeme[0]){
         case '(': return Token_Delim_LPAR;
         case ')': return Token_Delim_RPAR;
@@ -461,10 +561,28 @@ Token_Type getlexemeType(const char* lexeme){
         case '-': return Token_Arithmetic_Operator;
         case '^': return Token_Arithmetic_Operator;
         case '%': return Token_Arithmetic_Operator;
-        case '=': return Token_Assignment_Operator;
-        case '!': return Token_Boolean_Operator;
-        case '<': return Token_Boolean_Operator;
-        case '>': return Token_Boolean_Operator;
+        case '=':
+            switch(lexeme[1]){
+                case '=': return Token_Boolean_Operator;
+                default: return Token_Assignment_Operator;
+            }
+        case '!':
+            switch(lexeme[1]){
+                case '=': return Token_Boolean_Operator;
+                default: return Token_Boolean_Operator;
+            }
+        case '<':
+            switch(lexeme[1]){
+                case '=': return Token_Boolean_Operator;
+                default: return Token_Boolean_Operator;
+            }
+        case '>':
+            switch(lexeme[1]){
+                case '=': return Token_Boolean_Operator;
+                default: return Token_Boolean_Operator;
+            }
+        case ' ': return Token_Delim_Space;
+        case '\n': return Token_Delim_Newline;
         default: break;
     }
     
@@ -473,8 +591,8 @@ Token_Type getlexemeType(const char* lexeme){
 
 const char* outputToken(Token token){
     static char output[512];
-    snprintf(output, sizeof(output), "'%s'\t%s\t%d", 
-             token.lexeme, tokenTypeStrings[token.type], token.line_number);
+    snprintf(output, sizeof(output), "%s\t%s", 
+             token.lexeme, tokenTypeStrings[token.type]);
 
     /* Return the formatted string
     Example Output:
