@@ -71,7 +71,7 @@ typedef struct{
 Keyword keywords[] = {
     {"if", Token_Keyword_If},
     {"else", Token_Keyword_Else},
-    {"elseif", Token_Keyword_ElseIf},
+    {"else if", Token_Keyword_ElseIf},
     {"for", Token_Keyword_For},
     {"in", Token_Keyword_For_In},
     {"range", Token_Keyword_For_Range},
@@ -88,7 +88,11 @@ Keyword keywords[] = {
     {"do", Token_Noise_Do},
     {"DIV", Token_Arithmetic_Operator_DIV},
     {"or", Token_Boolean_Operator_OR},
-    {"and", Token_Boolean_Operator_AND}
+    {"and", Token_Boolean_Operator_AND},
+    {"pi", Token_Builtin_Constant},
+    {"sInInt", Token_Builtin_Constant},
+    {"sInDec", Token_Builtin_Constant},
+    {"sInString", Token_Builtin_Constant}
 };
 
 //Automaton States
@@ -286,7 +290,7 @@ Token getNextToken(FILE* srcFile){
                         currentState = STATE_IN_SINGLE_LINE_COMMENT;
                     }
                 }
-                else if(strchr("+-*=/%!<>", ch)) {
+                else if(strchr("+-*=/%!<>^", ch)) {
                     token.lexeme[lexemeIndex++] = ch; // Add character to operator
                     currentState = STATE_IN_OPERATOR;
                 }
@@ -313,9 +317,43 @@ Token getNextToken(FILE* srcFile){
                     ungetc(ch, srcFile); // Put back the non-identifier character
                     token.lexeme[lexemeIndex] = '\0';
                     token.type = getlexemeType(token.lexeme);
+
+                    // Check for else if tokens
+                    if(token.type == Token_Keyword_Else){
+                        int next = fgetc(srcFile);
+
+                        // Ignore whitespace and EOF, but preserve new line
+                        while(isspace(next) && next != '\n' && next != EOF) next = fgetc(srcFile);
+
+                        // Check for if characters and return else if token if found
+                        switch(next){
+                            case 'i':{
+                                int second = fgetc(srcFile);
+                                switch(second){
+                                    case 'f':
+                                        token.lexeme[lexemeIndex++] = ' ';
+                                        token.lexeme[lexemeIndex++] = next;
+                                        token.lexeme[lexemeIndex++] = second;
+                                        token.lexeme[lexemeIndex] = '\0';
+                                        token.type = getlexemeType(token.lexeme);
+                                        return token;
+                                    break;
+                                    default:
+                                        // else if not found, return prior characters to the file stream
+                                        ungetc(second, srcFile);
+                                        ungetc(next, srcFile);
+                                    break;
+                                }
+                            }
+                            break;
+                            default:
+                                // Return non else if character to the file stream
+                                ungetc(next, srcFile);
+                            break;
+                        }
+                    }
                     return token;
                 }
-
             break;
             #pragma endregion
             
