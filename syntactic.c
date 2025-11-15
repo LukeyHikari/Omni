@@ -150,7 +150,7 @@ void parse_value_expr() {
     syntax_error("Expected a value (number, identifier, literal, or '(')", peek().lexeme);
 }
 
-// <unary_expr> → ( “!” | “-” ) <unary_expr> | <value_expr>
+// <unary_expr> → <value_expr> | (“-” | “!”) <unary_expr>    
 void parse_unary_expr() {
     if ((peek().type == Token_Boolean_Operator && strcmp(peek().lexeme, "!") == 0) ||
         (peek().type == Token_Arithmetic_Operator && strcmp(peek().lexeme, "-") == 0)) 
@@ -162,7 +162,7 @@ void parse_unary_expr() {
     }
 }
 
-// <exponent_expr> → <unary_expr> | <value_expr> “^” <exponent_expr>	
+// <exponent_expr> → <unary_expr> | <unary_expr> “^” <exponent_expr>	
 void parse_exponent_expr() {
     parse_unary_expr(); // Parse the left base
 
@@ -172,7 +172,7 @@ void parse_exponent_expr() {
     }
 }
 
-// <muldiv_expr> → | <muldiv_expr> (“*” | “/” | “%” | “DIV”) <exponent_expr>
+// <muldiv_expr> → <exponent_expr> | <muldiv_expr> (“*” | “/” | “%” | “DIV”) <exponent_expr>
 void parse_muldiv_expr() {
     parse_exponent_expr(); // Parse the left side
 
