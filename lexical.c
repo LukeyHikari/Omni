@@ -193,16 +193,16 @@ int main(int argc, char *argv[]) {
     do {
         token = getNextToken(src);
 
-        // Stop on EOF or unknown token
-        if (token.type == Token_CodeEnd /*|| token.type == Token_Unknown*/)
-            break;
-
         //printf("%s\n", outputToken(token));
         // Output the token
         fprintf(outFile, "%-20s %-20s\n",
         (token.lexeme[0] == '\n' ? "\\n" : token.lexeme),
         tokenTypeStrings[token.type]);
         token_count++;
+
+        // Stop on EOF or unknown token
+        if (token.type == Token_CodeEnd /*|| token.type == Token_Unknown*/)
+            break;
 
     } while (1);
 
