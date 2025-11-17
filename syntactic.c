@@ -319,6 +319,7 @@ Token advance(){
 Token expect(Token_Type type){
     if(peek().type == type) return advance();
     const char* errorMsg = "Unexpected Token Type";
+    // For more complex error handling in the future
     // fprintf(errorMsg, "Expected token type %d, but got unexpected type %d", type, peek().type);
     reportSyntaxError(errorMsg);
 
@@ -332,7 +333,7 @@ Token_Type revertToTokenType(const char* parsedType){
             return (Token_Type)i;
         }
     }
-    return Token_Unknown;  // Fallback if not found
+    return Token_Unknown;  // fallback if not found
 }
 
 bool atEnd(){
@@ -550,6 +551,8 @@ void parseEqualityExpression(){
     // Use peek() to determine if we need to parse right side
     while (peek().type == Token_Boolean_Operator && 
            (strcmp(peek().lexeme, "==") == 0 || strcmp(peek().lexeme, "!=") == 0)) 
+           (strcmp(peek().lexeme, "==") == 0 || 
+            strcmp(peek().lexeme, "!=") == 0)) 
     {
         advance(); // Consume the '==' or '!='
         parseRelationalExpression(); // Parse the right side
