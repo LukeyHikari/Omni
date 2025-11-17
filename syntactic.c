@@ -53,6 +53,52 @@ typedef enum {
     Token_Delim_Space
 } Token_Type; 
 
+// Lookup Table for string representation of token types; for reconversion to Token_Type
+const char* tokenTypeStrings[] = {
+    "Identifier",
+    "Character",
+    "String",
+    "Number",
+    "Operator",
+    "CodeEnd",
+    "Unknown",
+    "Delimeter",
+    "Comment",
+    "Arithmetic_Operator",
+    "Arithmetic_Operator_DIV",
+    "Boolean_Operator",
+    "Boolean_Operator_AND",
+    "Boolean_Operator_OR",
+    "Assignment_Operator",
+    "Builtin_Constant",
+    "Keyword_If",
+    "Keyword_Else",
+    "Keyword_ElseIf",
+    "Keyword_For",
+    "Keyword_For_In",
+    "Keyword_For_Range",
+    "Keyword_Int",
+    "Keyword_Decimal",
+    "Keyword_Char",
+    "Keyword_String",
+    "Keyword_Boolean",
+    "Keyword_Read",
+    "Keyword_Write",
+    "Reserved_True",
+    "Reserved_False",
+    "Reserved_Null",
+    "Noise_Do",
+    "Delim_LPAR",
+    "Delim_RPAR",
+    "Delim_LBRAC",
+    "Delim_RBRAC",
+    "Delim_Comma",
+    "Delim_SQuote",
+    "Delim_DQuote",
+    "Delim_Period",
+    "Delim_Newline"
+};
+
 // Token Struct
 typedef struct {
     Token_Type type;
@@ -64,6 +110,7 @@ Token peek();
 Token previous();
 Token advance();
 Token expect(Token_Type type);
+Token_Type revertToTokenType(const char* parsedType);
 bool atEnd();
 bool match(Token_Type type);
 void reportSyntaxError(const char* msg);
@@ -123,6 +170,15 @@ Token expect(Token_Type type){
     reportSyntaxError(errorMsg);
 
     return peek();
+}
+
+Token_Type revertToTokenType(const char* parsedType){
+    for (int i = 0; i < sizeof(tokenTypeStrings)/sizeof(tokenTypeStrings[0]); i++) {
+        if (strcmp(tokenTypeStrings[i], parsedType) == 0) {
+            return (Token_Type)i;
+        }
+    }
+    return Token_Unknown;  // fallback if not found
 }
 
 bool atEnd(){
