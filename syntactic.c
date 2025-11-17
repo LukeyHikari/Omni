@@ -73,11 +73,14 @@ void parseProgram();
 void parseStatements();
 void parseStatement();
 void parseDeclareAssign();
+void parseAssign();
 void parseIf();
 void parseElseIf();
 void parseElse();
-void parseBlocks();
 void parseIterative();
+void parseBlocks();
+void parseRead();
+void parseWrite();
 void parseExpression();
 void parseOrExpression();
 void parseAndExpression();
@@ -136,6 +139,11 @@ void reportSyntaxError(const char* msg) {
     fprintf(stderr, "SYNTAX ERROR: %s\n", msg);
     exit(1);
 }
+
+void handleDo(){
+    // Potential bug TO FIX: Handle end of token stream
+    if(peek().type == Token_Noise_Do) advance();
+}
 #pragma endregion
 
 void parseProgram(){
@@ -154,20 +162,24 @@ void parseStatement(){
         case Token_Keyword_String: case Token_Keyword_Boolean:
             parseDeclareAssign();
         break;
+        case Token_Identifier:
+            parseAssign();
+        break;
         case Token_Keyword_If:
             parseIf();
-        break;
-        case Token_Keyword_ElseIf:
-            parseElseIf();
-        break;
-        case Token_Keyword_Else:
-            parseElse();
         break;
         case Token_Keyword_For:
             parseIterative();
         break;
+        case Token_Keyword_Read:
+            parseRead();
+        break;
+        case Token_Keyword_Write:
+            parseWrite();
+        break;
         default:
             reportSyntaxError("Invalid Start");
+            curToken++;
             return;
     }
 }
@@ -192,6 +204,7 @@ void parseDeclareAssign(){
         break;
         default:
             reportSyntaxError("Expected type keyword");
+            curToken++;
             return;
     }
     expect(Token_Identifier);
@@ -203,16 +216,26 @@ void parseDeclareAssign(){
     expect(Token_Delim_Newline);
 }
 
+void parseAssign(){
+    expect(Token_Identifier);
+    expect(Token_Assignment_Operator);
+    parseExpression();
+    expect(Token_Delim_Newline);
+}
+
 void parseIf(){
     expect(Token_Keyword_If);
     expect(Token_Delim_LPAR);
     parseExpression();
     expect(Token_Delim_RPAR);
+    handleDo();
     expect(Token_Delim_Newline);
     //parseStatement();
     parseBlocks();
 
-    while(tokens[curToken].type == Token_Keyword_ElseIf) parseStatement();
+    while(tokens[curToken].type == Token_Keyword_ElseIf) parseElseIf();
+
+    if(tokens[curToken].type == Token_Keyword_Else) parseElse();
 }
 
 void parseElseIf(){
@@ -220,15 +243,17 @@ void parseElseIf(){
     expect(Token_Delim_LPAR);
     parseExpression();
     expect(Token_Delim_RPAR);
+    handleDo();
     expect(Token_Delim_Newline);
     //parseStatement();
     parseBlocks();
 
-    if(tokens[curToken].type == Token_Keyword_Else) parseStatement();
+    //if(tokens[curToken].type == Token_Keyword_Else) parseElse();
 }
 
 void parseElse(){
     expect(Token_Keyword_Else);
+    handleDo();
     expect(Token_Delim_Newline);
     //parseStatement();
     parseBlocks();
@@ -244,6 +269,7 @@ void parseIterative(){
     expect(Token_Delim_Comma);
     parseExpression();
     expect(Token_Delim_RPAR);
+    handleDo();
     expect(Token_Delim_Newline);
     //parseStatement();
     parseBlocks();
@@ -253,15 +279,39 @@ void parseBlocks(){
     // Recursively gets statements in conditional and iterative code blocks
     while(1){
         switch(tokens[curToken].type){
-            case Token_Keyword_If: case Token_Keyword_ElseIf: case Token_Keyword_Else:
-            case Token_Keyword_For: case Token_Keyword_Int: case Token_Keyword_Decimal:
+            case Token_Keyword_If: case Token_Keyword_For: case Token_Keyword_Int: case Token_Keyword_Decimal:
             case Token_Keyword_Char: case Token_Keyword_String: case Token_Keyword_Boolean:
                 parseStatement();
             break;
+            case Token_Keyword_ElseIf: case Token_Keyword_Else:
+                return;
+            break;
             default:
+                reportSyntaxError("Unexpected token encountered in block");
+                curToken++;
                 return;
         }
     }
+}
+
+void parseRead(){
+    expect(Token_Keyword_Read);
+    expect(Token_Delim_LPAR);
+    expect(Token_Identifier);
+    expect(Token_Delim_RPAR);
+    expect(Token_Delim_Newline);
+}
+
+void parseWrite(){
+    expect(Token_Keyword_Write);
+    expect(Token_Delim_LPAR);
+    parseExpression();
+    while(tokens[curToken].type == Token_Delim_Comma){
+        expect(Token_Delim_Comma);
+        parseExpression();
+    }
+    expect(Token_Delim_RPAR);
+    expect(Token_Delim_Newline);
 }
 #pragma endregion
 
