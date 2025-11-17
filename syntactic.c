@@ -96,7 +96,8 @@ const char* tokenTypeStrings[] = {
     "Delim_SQuote",
     "Delim_DQuote",
     "Delim_Period",
-    "Delim_Newline"
+    "Delim_Newline",
+    "Delim_Space"
 };
 
 // Token Struct
@@ -143,8 +144,161 @@ void parseValueExpression();
 Token* tokens;
 int curToken = 0;
 
-int main(){
-    printf("Hello world");
+// Token Loader
+#define INITIAL_TOKEN_CAPACITY 2048
+
+// Global token storage (already declared earlier as Token* tokens; int curToken;)
+int token_count = 0;
+int token_capacity = 0;
+
+// Trim whitespace from both ends (in place)
+static char* trim(char* s) {
+    if(!s) return s;
+    // Left trim
+    while(isspace((unsigned char)*s)) s++;
+    if(*s == 0) return s;
+    // Right trim
+    char* end = s + strlen(s) - 1;
+    while(end > s && isspace((unsigned char)*end)) end--;
+    *(end + 1) = '\0';
+    return s;
+}
+
+// Ensure capacity for adding tokens
+static void ensureTokenCapacity() {
+    if(tokens == NULL) {
+        token_capacity = INITIAL_TOKEN_CAPACITY;
+        tokens = (Token*)malloc(sizeof(Token) * token_capacity);
+        if(tokens == NULL) {
+            fprintf(stderr, "Failed to allocate tokens array\n");
+            exit(1);
+        }
+        token_count = 0;
+    } else if(token_count >= token_capacity) {
+        token_capacity *= 2;
+        tokens = (Token*)realloc(tokens, sizeof(Token) * token_capacity);
+        if(tokens == NULL) {
+            fprintf(stderr, "Failed to reallocate tokens array\n");
+            exit(1);
+        }
+    }
+}
+
+// Parse a line assumed to contain "LEXEME ... TOKEN_TYPE"
+static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz) {
+    if(line == NULL) return false;
+    // Make a copy so we can modify
+    char buf[1024];
+    strncpy(buf, line, sizeof(buf)-1);
+    buf[sizeof(buf)-1] = '\0';
+
+    char* p = buf;
+    p = trim(p);
+    if(*p == '\0') return false;
+
+    // Skip lines that are separators or headers
+    if(strstr(p, "LEXEME") || strstr(p, "TOKEN_TYPE") || strstr(p, "----")) return false;
+
+    // Find last whitespace to split type
+    size_t len = strlen(p);
+    // Find the start index of the last word
+    int i = (int)len - 1;
+    while(i >= 0 && isspace((unsigned char)p[i])) i--;
+    if(i < 0) return false;
+    int end = i;
+    // Move i back until we hit whitespace or beginning
+    while(i >= 0 && !isspace((unsigned char)p[i])) i--;
+    int start_type = i + 1;
+
+    // Extract type
+    int type_len = end - start_type + 1;
+    if(type_len <= 0 || type_len >= (int)type_sz) return false;
+    strncpy(out_type, p + start_type, type_len);
+    out_type[type_len] = '\0';
+
+    // Lexeme is everything before start_type
+    p[start_type] = '\0';
+    char* lex = trim(buf);
+    if(lex == NULL || *lex == '\0') return false;
+
+    // Copy lexeme
+    strncpy(out_lexeme, lex, lexeme_sz - 1);
+    out_lexeme[lexeme_sz - 1] = '\0';
+
+    return true;
+}
+
+// Main loader function
+void loadTokensFromSymbolTable(const char* filepath) {
+    FILE* f = fopen(filepath, "r");
+    if (!f) {
+        fprintf(stderr, "Unable to open symbol table file: %s\n", filepath);
+        exit(1);
+    }
+
+    ensureTokenCapacity();
+
+    char line[1024];
+    while (fgets(line, sizeof(line), f) != NULL) {
+        size_t ln = strlen(line);
+        if (ln > 0 && (line[ln - 1] == '\n' || line[ln - 1] == '\r')) {
+            line[ln - 1] = '\0';
+            ln--;
+            // Handle CRLF
+            if (ln > 0 && line[ln - 1] == '\r') { line[ln - 1] = '\0'; ln--; }
+        }
+
+        char lexeme[MAX_LEXEME_LENGTH];
+        char typeStr[128];
+
+        if (!parseLineToLexemeAndType(line, lexeme, sizeof(lexeme), typeStr, sizeof(typeStr))) {
+            // If line did not parse into lexeme+type -> skip
+            continue;
+        }
+
+        // Convert textual token type to Token_Type enum using your existing function
+        Token_Type ttype = revertToTokenType(typeStr);
+
+
+        // Add token to global array
+        ensureTokenCapacity();
+        tokens[token_count].type = ttype;
+        // Copy lexeme safely
+        strncpy(tokens[token_count].lexeme, lexeme, MAX_LEXEME_LENGTH - 1);
+        tokens[token_count].lexeme[MAX_LEXEME_LENGTH - 1] = '\0';
+
+        token_count++;
+
+        // If we encounter CodeEnd in the file we can keep reading but usually EOF follows
+        if(ttype == Token_CodeEnd) break;
+    }
+
+    fclose(f);
+
+    // If file didn't contain a CodeEnd token, append one
+    if (token_count == 0 || tokens[token_count-1].type != Token_CodeEnd) {
+        ensureTokenCapacity();
+        tokens[token_count].type = Token_CodeEnd;
+        tokens[token_count].lexeme[0] = '\0';
+        token_count++;
+    }
+
+    // Reset parser index
+    curToken = 0;
+    // Optional: debug print count
+    printf("Loaded %d tokens from %s\n", token_count, filepath);
+}
+
+int main() {
+    // Allocate tokens pointer and load from uploaded symbol table
+    tokens = NULL; // Loader will allocate
+    loadTokensFromSymbolTable("C:\\Users\\Nor\\Downloads\\symbol_table.txt"); 
+
+    // Call parser functions
+    parseProgram();
+
+    printf("Parsing finished.\n");
+    return 0;
 }
 
 #pragma region Helper Functions
@@ -173,7 +327,8 @@ Token expect(Token_Type type){
 }
 
 Token_Type revertToTokenType(const char* parsedType){
-    for (int i = 0; i < sizeof(tokenTypeStrings)/sizeof(tokenTypeStrings[0]); i++) {
+	int i = 0;
+    for (i; i < sizeof(tokenTypeStrings)/sizeof(tokenTypeStrings[0]); i++) {
         if (strcmp(tokenTypeStrings[i], parsedType) == 0) {
             return (Token_Type)i;
         }
@@ -395,6 +550,7 @@ void parseEqualityExpression(){
 
     // Use peek() to determine if we need to parse right side
     while (peek().type == Token_Boolean_Operator && 
+           (strcmp(peek().lexeme, "==") == 0 || strcmp(peek().lexeme, "!=") == 0)) 
            (strcmp(peek().lexeme, "==") == 0 || 
             strcmp(peek().lexeme, "!=") == 0)) 
     {
