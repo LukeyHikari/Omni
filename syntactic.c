@@ -160,7 +160,7 @@ int token_capacity = 0;
 int main() {
     // Allocate tokens pointer and load from uploaded symbol table
     tokens = NULL; // Loader will allocate
-    loadTokensFromSymbolTable("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt"); 
+    loadTokensFromSymbolTable("C:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\symbol_table.txt"); 
 
     // Call parser functions
     parseProgram();
