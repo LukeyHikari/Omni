@@ -153,7 +153,8 @@ const char* tokenTypeStrings[] = {
     "Delim_SQuote",
     "Delim_DQuote",
     "Delim_Period",
-    "Delim_Newline"
+    "Delim_Newline",
+    "Delim_Space"
 };
 
 // Function Prototypes
@@ -164,14 +165,15 @@ static bool hasOmniExtension (const char* filename);
 static FILE* openOmniFile (const char* filename);
 static void errorAndExit(const char* message);
 
-int main(int argc, char *argv[]) {
+//int main(int argc, char *argv[])
+int main(){
     // Expect filename argument; terminal usage: ./lexical_analyzer <file.omni>
-    if (argc < 2) {
-        printf("Usage: %s <file.omni>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
+    // if (argc < 2) {
+    //     printf("Usage: %s <file.omni>\n", argv[0]);
+    //     return EXIT_FAILURE;
+    // }
 
-    const char* filename = argv[1];
+    const char* filename = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\samplecode.omni";//argv[1];
     FILE* src = openOmniFile(filename);  //Handles both checking + opening of the file
     printf("Processing file: %s\n\n", filename);
 
@@ -537,9 +539,9 @@ Token getNextToken(FILE* srcFile){
                 }
 
                 // Put back non-operator character
-                ungetc(ch, srcFile);
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = getlexemeType(token.lexeme);
+                // ungetc(ch, srcFile);
+                // token.lexeme[lexemeIndex] = '\0';
+                // token.type = getlexemeType(token.lexeme);
 
                 currentState = STATE_START;
                 return token;

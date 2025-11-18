@@ -5,99 +5,101 @@
 #include <ctype.h>
 
 #define MAX_LEXEME_LENGTH 256
+// Token Loader
+#define INITIAL_TOKEN_CAPACITY 2048
 
 // Token Type Enumeration
 typedef enum {
-    Token_Identifier,
-    Token_Character,
-    Token_String,
-    Token_Number,
-    Token_Operator,
-    Token_CodeEnd,
-    Token_Unknown,
-    Token_Delimeter,
-    Token_Comment,
-    Token_Arithmetic_Operator,
-    Token_Arithmetic_Operator_DIV,
-    Token_Boolean_Operator,
-    Token_Boolean_Operator_AND,
-    Token_Boolean_Operator_OR,
-    Token_Assignment_Operator,
-    Token_Builtin_Constant,
-    Token_Keyword_If,
-    Token_Keyword_Else,
-    Token_Keyword_ElseIf,
-    Token_Keyword_For,
-    Token_Keyword_For_In,
-    Token_Keyword_For_Range,
-    Token_Keyword_Int,
-    Token_Keyword_Decimal,
-    Token_Keyword_Char,
-    Token_Keyword_String,
-    Token_Keyword_Boolean,
-    Token_Keyword_Read,
-    Token_Keyword_Write,
-    Token_Reserved_True,
-    Token_Reserved_False,
-    Token_Reserved_Null,
-    Token_Noise_Do,
-    Token_Delim_LPAR,
-    Token_Delim_RPAR,
-    Token_Delim_LBRAC,
-    Token_Delim_RBRAC,
-    Token_Delim_Comma,
-    Token_Delim_SQuote,
-    Token_Delim_DQuote,
-    Token_Delim_Period,
-    Token_Delim_Newline,
-    Token_Delim_Space
+    Token_Identifier,              // 0
+    Token_Character,               // 1
+    Token_String,                  // 2
+    Token_Number,                  // 3
+    Token_Operator,                // 4
+    Token_CodeEnd,                 // 5
+    Token_Unknown,                 // 6
+    Token_Delimeter,               // 7
+    Token_Comment,                 // 8
+    Token_Arithmetic_Operator,     // 9
+    Token_Arithmetic_Operator_DIV, // 10
+    Token_Boolean_Operator,        // 11
+    Token_Boolean_Operator_AND,    // 12
+    Token_Boolean_Operator_OR,     // 13
+    Token_Assignment_Operator,     // 14
+    Token_Builtin_Constant,        // 15
+    Token_Keyword_If,              // 16
+    Token_Keyword_Else,            // 17
+    Token_Keyword_ElseIf,          // 18
+    Token_Keyword_For,             // 19
+    Token_Keyword_For_In,          // 20
+    Token_Keyword_For_Range,       // 21
+    Token_Keyword_Int,             // 22
+    Token_Keyword_Decimal,         // 23
+    Token_Keyword_Char,            // 24
+    Token_Keyword_String,          // 25
+    Token_Keyword_Boolean,         // 26
+    Token_Keyword_Read,            // 27
+    Token_Keyword_Write,           // 28
+    Token_Reserved_True,           // 29
+    Token_Reserved_False,          // 30
+    Token_Reserved_Null,           // 31
+    Token_Noise_Do,                // 32
+    Token_Delim_LPAR,              // 33
+    Token_Delim_RPAR,              // 34
+    Token_Delim_LBRAC,             // 35
+    Token_Delim_RBRAC,             // 36
+    Token_Delim_Comma,             // 37
+    Token_Delim_SQuote,            // 38
+    Token_Delim_DQuote,            // 39
+    Token_Delim_Period,            // 40
+    Token_Delim_Newline,           // 41
+    Token_Delim_Space              // 42
 } Token_Type; 
 
 // Lookup Table for string representation of token types; for reconversion to Token_Type
 const char* tokenTypeStrings[] = {
-    "Identifier",
-    "Character",
-    "String",
-    "Number",
-    "Operator",
-    "CodeEnd",
-    "Unknown",
-    "Delimeter",
-    "Comment",
-    "Arithmetic_Operator",
-    "Arithmetic_Operator_DIV",
-    "Boolean_Operator",
-    "Boolean_Operator_AND",
-    "Boolean_Operator_OR",
-    "Assignment_Operator",
-    "Builtin_Constant",
-    "Keyword_If",
-    "Keyword_Else",
-    "Keyword_ElseIf",
-    "Keyword_For",
-    "Keyword_For_In",
-    "Keyword_For_Range",
-    "Keyword_Int",
-    "Keyword_Decimal",
-    "Keyword_Char",
-    "Keyword_String",
-    "Keyword_Boolean",
-    "Keyword_Read",
-    "Keyword_Write",
-    "Reserved_True",
-    "Reserved_False",
-    "Reserved_Null",
-    "Noise_Do",
-    "Delim_LPAR",
-    "Delim_RPAR",
-    "Delim_LBRAC",
-    "Delim_RBRAC",
-    "Delim_Comma",
-    "Delim_SQuote",
-    "Delim_DQuote",
-    "Delim_Period",
-    "Delim_Newline",
-    "Delim_Space"
+    "Identifier",               // 0
+    "Character",                // 1
+    "String",                   // 2
+    "Number",                   // 3
+    "Operator",                 // 4
+    "CodeEnd",                  // 5
+    "Unknown",                  // 6
+    "Delimeter",                // 7
+    "Comment",                  // 8
+    "Arithmetic_Operator",      // 9
+    "Arithmetic_Operator_DIV",  // 10
+    "Boolean_Operator",         // 11
+    "Boolean_Operator_AND",     // 12
+    "Boolean_Operator_OR",      // 13
+    "Assignment_Operator",      // 14
+    "Builtin_Constant",         // 15
+    "Keyword_If",               // 16
+    "Keyword_Else",             // 17
+    "Keyword_ElseIf",           // 18
+    "Keyword_For",              // 19
+    "Keyword_For_In",           // 20
+    "Keyword_For_Range",        // 21
+    "Keyword_Int",              // 22
+    "Keyword_Decimal",          // 23
+    "Keyword_Char",             // 24
+    "Keyword_String",           // 25
+    "Keyword_Boolean",          // 26
+    "Keyword_Read",             // 27
+    "Keyword_Write",            // 28
+    "Reserved_True",            // 29
+    "Reserved_False",           // 30
+    "Reserved_Null",            // 31
+    "Noise_Do",                 // 32
+    "Delim_LPAR",               // 33
+    "Delim_RPAR",               // 34
+    "Delim_LBRAC",              // 35
+    "Delim_RBRAC",              // 36
+    "Delim_Comma",              // 37
+    "Delim_SQuote",             // 38
+    "Delim_DQuote",             // 39
+    "Delim_Period",             // 40
+    "Delim_Newline",            // 41
+    "Delim_Space"               // 42
 };
 
 // Token Struct
@@ -115,6 +117,7 @@ Token_Type revertToTokenType(const char* parsedType);
 bool atEnd();
 bool match(Token_Type type);
 void reportSyntaxError(const char* msg);
+void handleComments();
 
 // Parser function prototypes
 void parseProgram();
@@ -140,17 +143,431 @@ void parseExponentExpression();
 void parseUnaryExpression();
 void parseValueExpression();
 
+// Loader function prototypes
+static char* trim(char* s);
+static void ensureTokenCapacity();
+static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz);
+void loadTokensFromSymbolTable(const char* filepath);
+
 // Token Stream
 Token* tokens;
 int curToken = 0;
-
-// Token Loader
-#define INITIAL_TOKEN_CAPACITY 2048
 
 // Global token storage (already declared earlier as Token* tokens; int curToken;)
 int token_count = 0;
 int token_capacity = 0;
 
+int main() {
+    // Allocate tokens pointer and load from uploaded symbol table
+    tokens = NULL; // Loader will allocate
+    loadTokensFromSymbolTable("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt"); 
+
+    // Call parser functions
+    parseProgram();
+
+    printf("Parsing finished.\n");
+    return 0;
+}
+
+#pragma region Helper Functions
+Token peek(){
+    return tokens[curToken];
+}
+
+Token previous(){
+    if(curToken == 0) return tokens[0];
+    return tokens[curToken - 1];
+}
+
+Token advance(){
+    if(!atEnd()) curToken++;
+    return previous();
+}
+
+Token expect(Token_Type type){
+    if(type != peek().type){
+        printf("Current Token: %s | Expected Token: %d | Peeked Token: %d\n",
+                    tokens[curToken].lexeme, type, peek().type);
+        printf("Other Check: %s\n", tokens[curToken-1].lexeme);
+    } 
+    if(peek().type == type) return advance();
+    const char* errorMsg = "Unexpected Token Type";
+    // For more complex error handling in the future
+    // fprintf(errorMsg, "Expected token type %d, but got unexpected type %d", type, peek().type);
+    reportSyntaxError(errorMsg);
+
+    return peek();
+}
+
+Token_Type revertToTokenType(const char* parsedType){
+    int streamSize = sizeof(tokenTypeStrings)/sizeof(tokenTypeStrings[0]);
+    for (int i = 0; i < streamSize; i++) {
+        if (strcmp(tokenTypeStrings[i], parsedType) == 0) {
+            return (Token_Type)i;
+        }
+    }
+    return Token_Unknown;  // fallback if not found
+}
+
+bool atEnd(){
+    return tokens[curToken].type == Token_CodeEnd;
+}
+
+bool match(Token_Type type){
+    if(atEnd() || peek().type != type) return 0;
+    advance();
+    return 1;
+}
+
+void reportSyntaxError(const char* msg) {
+    fprintf(stderr, "SYNTAX ERROR: %s\n", msg);
+    //exit(1);
+}
+
+void handleDo(){
+    // Potential bug TO FIX: Handle end of token stream
+    if(peek().type == Token_Noise_Do) advance();
+}
+
+void handleComments(){
+    // For same line comments
+    // Potential bug TO FIX: Handle end of token stream
+    if(peek().type == Token_Comment) advance();
+}
+#pragma endregion
+
+void parseProgram(){
+    parseStatements();
+    expect(Token_CodeEnd);
+}
+
+void parseStatements(){
+    while(tokens[curToken].type != Token_CodeEnd)
+        parseStatement();
+}
+
+void parseStatement(){
+    switch(tokens[curToken].type){
+        case Token_Keyword_Int: case Token_Keyword_Decimal: case Token_Keyword_Char:
+        case Token_Keyword_String: case Token_Keyword_Boolean:
+            parseDeclareAssign();
+        break;
+        case Token_Identifier:
+            parseAssign();
+        break;
+        case Token_Keyword_If:
+            parseIf();
+        break;
+        case Token_Keyword_For:
+            parseIterative();
+        break;
+        case Token_Keyword_Read:
+            parseRead();
+        break;
+        case Token_Keyword_Write:
+            parseWrite();
+        break;
+        case Token_Comment: case Token_Delim_Newline:
+            advance();
+            break;
+        default:
+            //reportSyntaxError("Invalid Start");
+            curToken++;
+            return;
+    }
+}
+
+#pragma region Statement Functions
+void parseDeclareAssign(){
+    switch(tokens[curToken].type){
+        case Token_Keyword_Int:
+            expect(Token_Keyword_Int);
+        break;
+        case Token_Keyword_Decimal:
+            expect(Token_Keyword_Decimal);
+        break;
+        case Token_Keyword_Char:
+            expect(Token_Keyword_Char);
+        break;
+        case Token_Keyword_String:
+            expect(Token_Keyword_String);
+        break;
+        case Token_Keyword_Boolean:
+            expect(Token_Keyword_Boolean);
+        break;
+        default:
+            reportSyntaxError("Expected type keyword");
+            curToken++;
+            return;
+    }
+    expect(Token_Identifier);
+
+    if(peek().type == Token_Assignment_Operator){
+        expect(Token_Assignment_Operator);
+        parseExpression();
+    }
+    handleComments();
+    expect(Token_Delim_Newline);
+}
+
+void parseAssign(){
+    expect(Token_Identifier);
+    expect(Token_Assignment_Operator);
+    parseExpression();
+    handleComments();
+    expect(Token_Delim_Newline);
+}
+
+void parseIf(){
+    expect(Token_Keyword_If);
+    expect(Token_Delim_LPAR);
+    parseExpression();
+    expect(Token_Delim_RPAR);
+    handleDo();
+    handleComments();
+    expect(Token_Delim_Newline);
+    //parseStatement();
+    parseBlocks();
+
+    while(tokens[curToken].type == Token_Keyword_ElseIf) parseElseIf();
+
+    if(tokens[curToken].type == Token_Keyword_Else) parseElse();
+}
+
+void parseElseIf(){
+    expect(Token_Keyword_ElseIf);
+    expect(Token_Delim_LPAR);
+    parseExpression();
+    expect(Token_Delim_RPAR);
+    handleDo();
+    handleComments();
+    expect(Token_Delim_Newline);
+    //parseStatement();
+    parseBlocks();
+
+    //if(tokens[curToken].type == Token_Keyword_Else) parseElse();
+}
+
+void parseElse(){
+    expect(Token_Keyword_Else);
+    handleDo();
+    handleComments();
+    expect(Token_Delim_Newline);
+    //parseStatement();
+    parseBlocks();
+}
+
+void parseIterative(){
+    expect(Token_Keyword_For);
+    expect(Token_Identifier);
+    expect(Token_Keyword_For_In);
+    expect(Token_Keyword_For_Range);
+    expect(Token_Delim_LPAR);
+    parseExpression();
+    // TO FIX: Potential bug that doesn't follow grammar of for
+    if(peek().type == Token_Delim_RPAR) expect(Token_Delim_RPAR);
+    else{
+        while(tokens[curToken].type == Token_Delim_Comma){
+            expect(Token_Delim_Comma);
+            parseExpression();
+            // printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
+            // printf("Parsing next token: %s\n", tokens[curToken].lexeme);
+            if(peek().type == Token_Delim_RPAR) {
+                expect(Token_Delim_RPAR);
+                break;
+            }
+            //printf("Parsed expression: %s\n", tokens[curToken].lexeme);
+        }
+    }
+    handleDo();
+    handleComments();
+    expect(Token_Delim_Newline);
+    //parseStatement();
+    parseBlocks();
+}
+
+void parseBlocks(){
+    // Recursively gets statements in conditional and iterative code blocks
+    while(1){
+        switch(tokens[curToken].type){
+            case Token_Keyword_If: case Token_Keyword_For: case Token_Keyword_Int: case Token_Keyword_Decimal:
+            case Token_Keyword_Char: case Token_Keyword_String: case Token_Keyword_Boolean: case Token_Identifier:
+            case Token_Keyword_Write: case Token_Keyword_Read:
+                parseStatement();
+            break;
+            case Token_Keyword_ElseIf: case Token_Keyword_Else:
+                return;
+            break;
+            case Token_Delim_Newline:
+                return;
+            break;
+            default:
+                printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
+                printf("Parsing next token: %s\n", tokens[curToken].lexeme);
+                reportSyntaxError("Unexpected token encountered in block");
+                curToken++;
+                return;
+        }
+    }
+}
+
+void parseRead(){
+    expect(Token_Keyword_Read);
+    expect(Token_Delim_LPAR);
+    expect(Token_Identifier);
+    expect(Token_Delim_RPAR);
+    handleComments();
+    expect(Token_Delim_Newline);
+}
+
+void parseWrite(){
+    expect(Token_Keyword_Write);
+    expect(Token_Delim_LPAR);
+    parseExpression();
+    // printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
+    // printf("Parsing next token: %s\n", tokens[curToken].lexeme);
+    if(peek().type == Token_Delim_RPAR) expect(Token_Delim_RPAR);
+    else{
+        while(tokens[curToken].type == Token_Delim_Comma){
+            expect(Token_Delim_Comma);
+            parseExpression();
+            // printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
+            // printf("Parsing next token: %s\n", tokens[curToken].lexeme);
+            if(peek().type == Token_Delim_RPAR) {
+                expect(Token_Delim_RPAR);
+                break;
+            }
+            //printf("Parsed expression: %s\n", tokens[curToken].lexeme);
+        }
+    }
+    //expect(Token_Delim_RPAR);
+    handleComments();
+    if(peek().type != Token_CodeEnd)
+        expect(Token_Delim_Newline);
+}
+#pragma endregion
+
+#pragma region Expresison Functions
+void parseExpression(){
+    parseOrExpression();
+}
+
+void parseOrExpression(){
+    parseAndExpression(); // Parse the left side
+
+    // Use match() on OR to determine if we need to parse right side
+    while (match(Token_Boolean_Operator_OR)) parseAndExpression(); // Parse the right side
+}
+
+void parseAndExpression(){
+    parseEqualityExpression(); // Parse the left side
+
+    // Use match() on AND to determine if we need to parse right hside
+    while (match(Token_Boolean_Operator_AND)) parseEqualityExpression(); // Parse the right side
+}
+
+void parseEqualityExpression(){
+    parseRelationalExpression(); // Parse the left side
+
+    // Use peek() to determine if we need to parse right side
+    while (peek().type == Token_Boolean_Operator && 
+           (strcmp(peek().lexeme, "==") == 0 || 
+            strcmp(peek().lexeme, "!=") == 0)) 
+    {
+        advance(); // Consume the '==' or '!='
+        parseRelationalExpression(); // Parse the right side
+    }
+}
+
+void parseRelationalExpression(){
+    parseAddSubExpression(); // Parse the left side
+
+    // Use peek() to determine if we need to parse right side
+    while (peek().type == Token_Boolean_Operator &&
+           (strcmp(peek().lexeme, "<") == 0 || 
+            strcmp(peek().lexeme, ">") == 0 ||
+            strcmp(peek().lexeme, "<=") == 0 || 
+            strcmp(peek().lexeme, ">=") == 0)) 
+    {
+        advance(); // Consume the operator
+        parseAddSubExpression(); // Parse the right side
+    }
+}
+
+void parseAddSubExpression(){
+    parseMulDivExpression(); // Parse the left side
+
+    // Use peek() to determine if we need to parse right side
+    while (peek().type == Token_Arithmetic_Operator &&
+           (strcmp(peek().lexeme, "+") == 0 || 
+            strcmp(peek().lexeme, "-") == 0)) 
+    {
+        advance(); // Consume the '+' or '-'
+        parseMulDivExpression(); // Parse the right side
+    }
+}
+
+void parseMulDivExpression(){
+    parseExponentExpression(); // Parse the left side
+
+    // Use peek() to determine if we need to parse right side
+    while ((peek().type == Token_Arithmetic_Operator &&
+               (strcmp(peek().lexeme, "*") == 0 || 
+                strcmp(peek().lexeme, "/") == 0 || 
+                strcmp(peek().lexeme, "%") == 0)) ||
+                peek().type == Token_Arithmetic_Operator_DIV) 
+    {
+        advance(); // Consume the operator
+        parseExponentExpression(); // Parse the right side
+    }
+}
+
+void parseExponentExpression(){
+    parseUnaryExpression(); // Parse the left base
+
+    if (peek().type == Token_Arithmetic_Operator && strcmp(peek().lexeme, "^") == 0) {
+        advance(); // Consume the '^'
+        parseExponentExpression(); // Recursive call for the right side (Exponent)
+    }
+}
+
+void parseUnaryExpression(){
+    if ((peek().type == Token_Boolean_Operator && strcmp(peek().lexeme, "!") == 0) ||
+        (peek().type == Token_Arithmetic_Operator && strcmp(peek().lexeme, "-") == 0)) 
+    {
+        advance(); // Consume the '!' or '-'
+        parseUnaryExpression(); // Recursive call for !!true / !!!!false
+    } else {
+        parseValueExpression(); // Base case
+    }
+}
+
+void parseValueExpression(){
+    // Handle literals and identifiers
+    if (match(Token_Number) ||
+        match(Token_Identifier) ||
+        match(Token_Reserved_True) ||
+        match(Token_Reserved_False) ||
+        match(Token_String) ||
+        match(Token_Character) ||
+        match(Token_Builtin_Constant) || 
+        match(Token_Reserved_Null)) {
+        return; // consume value
+    }
+
+    // Handle “(“ <expr> “)”
+    if (match(Token_Delim_LPAR)) {
+        parseExpression(); // Recursively parse the expression inside
+        expect(Token_Delim_RPAR);
+        return;
+    }
+
+    // If we get here, no valid value was found
+    reportSyntaxError("Expected a value, but got nothing");
+}
+#pragma endregion
+
+#pragma region Loader functions
 // Trim whitespace from both ends (in place)
 static char* trim(char* s) {
     if(!s) return s;
@@ -287,362 +704,5 @@ void loadTokensFromSymbolTable(const char* filepath) {
     curToken = 0;
     // Optional: debug print count
     printf("Loaded %d tokens from %s\n", token_count, filepath);
-}
-
-int main() {
-    // Allocate tokens pointer and load from uploaded symbol table
-    tokens = NULL; // Loader will allocate
-    loadTokensFromSymbolTable("C:\\Users\\Nor\\Downloads\\symbol_table.txt"); 
-
-    // Call parser functions
-    parseProgram();
-
-    printf("Parsing finished.\n");
-    return 0;
-}
-
-#pragma region Helper Functions
-Token peek(){
-    return tokens[curToken];
-}
-
-Token previous(){
-    if(curToken == 0) return tokens[0];
-    return tokens[curToken - 1];
-}
-
-Token advance(){
-    if(!atEnd()) curToken++;
-    return previous();
-}
-
-Token expect(Token_Type type){
-    if(peek().type == type) return advance();
-    const char* errorMsg = "Unexpected Token Type";
-    // For more complex error handling in the future
-    // fprintf(errorMsg, "Expected token type %d, but got unexpected type %d", type, peek().type);
-    reportSyntaxError(errorMsg);
-
-    return peek();
-}
-
-Token_Type revertToTokenType(const char* parsedType){
-	int i = 0;
-    for (i; i < sizeof(tokenTypeStrings)/sizeof(tokenTypeStrings[0]); i++) {
-        if (strcmp(tokenTypeStrings[i], parsedType) == 0) {
-            return (Token_Type)i;
-        }
-    }
-    return Token_Unknown;  // fallback if not found
-}
-
-bool atEnd(){
-    return tokens[curToken].type == Token_CodeEnd;
-}
-
-bool match(Token_Type type){
-    if(atEnd() || peek().type != type) return 0;
-    advance();
-    return 1;
-}
-
-void reportSyntaxError(const char* msg) {
-    fprintf(stderr, "SYNTAX ERROR: %s\n", msg);
-    exit(1);
-}
-
-void handleDo(){
-    // Potential bug TO FIX: Handle end of token stream
-    if(peek().type == Token_Noise_Do) advance();
-}
-#pragma endregion
-
-void parseProgram(){
-    parseStatements();
-    expect(Token_CodeEnd);
-}
-
-void parseStatements(){
-    while(tokens[curToken].type != Token_CodeEnd)
-        parseStatement();
-}
-
-void parseStatement(){
-    switch(tokens[curToken].type){
-        case Token_Keyword_Int: case Token_Keyword_Decimal: case Token_Keyword_Char:
-        case Token_Keyword_String: case Token_Keyword_Boolean:
-            parseDeclareAssign();
-        break;
-        case Token_Identifier:
-            parseAssign();
-        break;
-        case Token_Keyword_If:
-            parseIf();
-        break;
-        case Token_Keyword_For:
-            parseIterative();
-        break;
-        case Token_Keyword_Read:
-            parseRead();
-        break;
-        case Token_Keyword_Write:
-            parseWrite();
-        break;
-        default:
-            reportSyntaxError("Invalid Start");
-            curToken++;
-            return;
-    }
-}
-
-#pragma region Statement Functions
-void parseDeclareAssign(){
-    switch(tokens[curToken].type){
-        case Token_Keyword_Int:
-            expect(Token_Keyword_Int);
-        break;
-        case Token_Keyword_Decimal:
-            expect(Token_Keyword_Decimal);
-        break;
-        case Token_Keyword_Char:
-            expect(Token_Keyword_Char);
-        break;
-        case Token_Keyword_String:
-            expect(Token_Keyword_String);
-        break;
-        case Token_Keyword_Boolean:
-            expect(Token_Keyword_Boolean);
-        break;
-        default:
-            reportSyntaxError("Expected type keyword");
-            curToken++;
-            return;
-    }
-    expect(Token_Identifier);
-
-    if(peek().type == Token_Assignment_Operator){
-        expect(Token_Assignment_Operator);
-        parseExpression();
-    }
-    expect(Token_Delim_Newline);
-}
-
-void parseAssign(){
-    expect(Token_Identifier);
-    expect(Token_Assignment_Operator);
-    parseExpression();
-    expect(Token_Delim_Newline);
-}
-
-void parseIf(){
-    expect(Token_Keyword_If);
-    expect(Token_Delim_LPAR);
-    parseExpression();
-    expect(Token_Delim_RPAR);
-    handleDo();
-    expect(Token_Delim_Newline);
-    //parseStatement();
-    parseBlocks();
-
-    while(tokens[curToken].type == Token_Keyword_ElseIf) parseElseIf();
-
-    if(tokens[curToken].type == Token_Keyword_Else) parseElse();
-}
-
-void parseElseIf(){
-    expect(Token_Keyword_ElseIf);
-    expect(Token_Delim_LPAR);
-    parseExpression();
-    expect(Token_Delim_RPAR);
-    handleDo();
-    expect(Token_Delim_Newline);
-    //parseStatement();
-    parseBlocks();
-
-    //if(tokens[curToken].type == Token_Keyword_Else) parseElse();
-}
-
-void parseElse(){
-    expect(Token_Keyword_Else);
-    handleDo();
-    expect(Token_Delim_Newline);
-    //parseStatement();
-    parseBlocks();
-}
-
-void parseIterative(){
-    expect(Token_Keyword_For);
-    expect(Token_Identifier);
-    expect(Token_Keyword_For_In);
-    expect(Token_Keyword_For_Range);
-    expect(Token_Delim_LPAR);
-    parseExpression();
-    expect(Token_Delim_Comma);
-    parseExpression();
-    expect(Token_Delim_RPAR);
-    handleDo();
-    expect(Token_Delim_Newline);
-    //parseStatement();
-    parseBlocks();
-}
-
-void parseBlocks(){
-    // Recursively gets statements in conditional and iterative code blocks
-    while(1){
-        switch(tokens[curToken].type){
-            case Token_Keyword_If: case Token_Keyword_For: case Token_Keyword_Int: case Token_Keyword_Decimal:
-            case Token_Keyword_Char: case Token_Keyword_String: case Token_Keyword_Boolean:
-                parseStatement();
-            break;
-            case Token_Keyword_ElseIf: case Token_Keyword_Else:
-                return;
-            break;
-            default:
-                reportSyntaxError("Unexpected token encountered in block");
-                curToken++;
-                return;
-        }
-    }
-}
-
-void parseRead(){
-    expect(Token_Keyword_Read);
-    expect(Token_Delim_LPAR);
-    expect(Token_Identifier);
-    expect(Token_Delim_RPAR);
-    expect(Token_Delim_Newline);
-}
-
-void parseWrite(){
-    expect(Token_Keyword_Write);
-    expect(Token_Delim_LPAR);
-    parseExpression();
-    while(tokens[curToken].type == Token_Delim_Comma){
-        expect(Token_Delim_Comma);
-        parseExpression();
-    }
-    expect(Token_Delim_RPAR);
-    expect(Token_Delim_Newline);
-}
-#pragma endregion
-
-#pragma region Expresison Functions
-void parseExpression(){
-    parseOrExpression();
-}
-
-void parseOrExpression(){
-    parseAndExpression(); // Parse the left side
-
-    // Use match() on OR to determine if we need to parse right side
-    while (match(Token_Boolean_Operator_OR)) parseAndExpression(); // Parse the right side
-}
-
-void parseAndExpression(){
-    parseEqualityExpression(); // Parse the left side
-
-    // Use match() on AND to determine if we need to parse right hside
-    while (match(Token_Boolean_Operator_AND)) parseEqualityExpression(); // Parse the right side
-}
-
-void parseEqualityExpression(){
-    parseRelationalExpression(); // Parse the left side
-
-    // Use peek() to determine if we need to parse right side
-    while (peek().type == Token_Boolean_Operator && 
-           (strcmp(peek().lexeme, "==") == 0 || strcmp(peek().lexeme, "!=") == 0)) 
-           (strcmp(peek().lexeme, "==") == 0 || 
-            strcmp(peek().lexeme, "!=") == 0)) 
-    {
-        advance(); // Consume the '==' or '!='
-        parseRelationalExpression(); // Parse the right side
-    }
-}
-
-void parseRelationalExpression(){
-    parseAddSubExpression(); // Parse the left side
-
-    // Use peek() to determine if we need to parse right side
-    while (peek().type == Token_Boolean_Operator &&
-           (strcmp(peek().lexeme, "<") == 0 || 
-            strcmp(peek().lexeme, ">") == 0 ||
-            strcmp(peek().lexeme, "<=") == 0 || 
-            strcmp(peek().lexeme, ">=") == 0)) 
-    {
-        advance(); // Consume the operator
-        parseAddSubExpression(); // Parse the right side
-    }
-}
-
-void parseAddSubExpression(){
-    parseMulDivExpression(); // Parse the left side
-
-    // Use peek() to determine if we need to parse right side
-    while (peek().type == Token_Arithmetic_Operator &&
-           (strcmp(peek().lexeme, "+") == 0 || 
-            strcmp(peek().lexeme, "-") == 0)) 
-    {
-        advance(); // Consume the '+' or '-'
-        parseMulDivExpression(); // Parse the right side
-    }
-}
-
-void parseMulDivExpression(){
-    parseExponentExpression(); // Parse the left side
-
-    // Use peek() to determine if we need to parse right side
-    while ((peek().type == Token_Arithmetic_Operator &&
-               (strcmp(peek().lexeme, "*") == 0 || 
-                strcmp(peek().lexeme, "/") == 0 || 
-                strcmp(peek().lexeme, "%") == 0)) ||
-                peek().type == Token_Arithmetic_Operator_DIV) 
-    {
-        advance(); // Consume the operator
-        parseExponentExpression(); // Parse the right side
-    }
-}
-
-void parseExponentExpression(){
-    parseUnaryExpression(); // Parse the left base
-
-    if (peek().type == Token_Arithmetic_Operator && strcmp(peek().lexeme, "^") == 0) {
-        advance(); // Consume the '^'
-        parseExponentExpression(); // Recursive call for the right side (Exponent)
-    }
-}
-
-void parseUnaryExpression(){
-    if ((peek().type == Token_Boolean_Operator && strcmp(peek().lexeme, "!") == 0) ||
-        (peek().type == Token_Arithmetic_Operator && strcmp(peek().lexeme, "-") == 0)) 
-    {
-        advance(); // Consume the '!' or '-'
-        parseUnaryExpression(); // Recursive call for !!true / !!!!false
-    } else {
-        parseValueExpression(); // Base case
-    }
-}
-
-void parseValueExpression(){
-    // Handle literals and identifiers
-    if (match(Token_Number) ||
-        match(Token_Identifier) ||
-        match(Token_Reserved_True) ||
-        match(Token_Reserved_False) ||
-        match(Token_String) ||
-        match(Token_Character) ||
-        match(Token_Builtin_Constant) || 
-        match(Token_Reserved_Null)) {
-        return; // consume value
-    }
-
-    // Handle “(“ <expr> “)”
-    if (match(Token_Delim_LPAR)) {
-        parseExpression(); // Recursively parse the expression inside
-        expect(Token_Delim_RPAR);
-        return;
-    }
-
-    // If we get here, no valid value was found
-    reportSyntaxError("Expected a value, but got nothing");
 }
 #pragma endregion
