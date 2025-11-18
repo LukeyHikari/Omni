@@ -196,8 +196,8 @@ int main(int argc, char *argv[]) {
         //printf("%s\n", outputToken(token));
         // Output the token
         fprintf(outFile, "%-20s %-20s\n",
-        (token.lexeme[0] == '\n' ? "\\n" : token.lexeme),
-        tokenTypeStrings[token.type]);
+                    (token.lexeme[0] == '\n' ? "\\n" : token.lexeme),
+                    tokenTypeStrings[token.type]);
         token_count++;
 
         // Stop on EOF or unknown token
@@ -668,8 +668,8 @@ static FILE* openOmniFile (const char* filename) {
     //Verify file extension
     if (!hasOmniExtension(filename)) errorAndExit("Invalid file type");
 
-    //Try opening the file for reading (binary mode)
-    FILE* file = fopen(filename, "rb"); 
+    //Try opening the file for reading
+    FILE* file = fopen(filename, "r"); 
     if (!file) {
         char buf[256];
         snprintf(buf, sizeof(buf), "Failed to open the file: %s", filename);
