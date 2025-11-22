@@ -498,174 +498,152 @@ void freeAST(AST_Node* node) {
 
 #pragma region JSON Printing Function //from copilot
 
-// Helper: print indentation
-static void printIndent(FILE* f, int indent) {
-    for (int i = 0; i < indent; ++i) fputc(' ', f);
-}
+// Forward declaration
+static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
 
-// Helper: write a JSON string with proper escaping
-static void fputs_json_escaped(FILE* f, const char* s) {
-    if (!s) {
-        fputs("null", f);
-        return;
-    }
-    fputc('"', f);
-    for (const unsigned char* p = (const unsigned char*)s; *p; ++p) {
-        unsigned char c = *p;
-        switch (c) {
-            case '"': fputs("\\\"", f); break;
-            case '\\': fputs("\\\\", f); break;
-            case '\b': fputs("\\b", f); break;
-            case '\f': fputs("\\f", f); break;
-            case '\n': fputs("\\n", f); break;
-            case '\r': fputs("\\r", f); break;
-            case '\t': fputs("\\t", f); break;
-            default:
-                if (c < 0x20) {
-                    // control character -> \u00XX
-                    fprintf(f, "\\u%04x", c);
-                } else {
-                    fputc(c, f);
-                }
-        }
-    }
-    fputc('"', f);
-}
-
-// Write a token object: {"type":"...","lexeme":"..."}
-static void writeTokenJSON(FILE* f, Token token) {
-    fputs("{\"type\":\"", f);
-    fputs(tokenTypeStrings[token.type], f);
-    fputs("\",\"lexeme\":", f);
-    fputs_json_escaped(f, token.lexeme);
-    fputc('}', f);
-}
-
-// Forward
-static void writeNodeJSON_internal(FILE* f, AST_Node* node, int indent);
-
-// Write the AST node into JSON form (pretty printed)
-static void writeNodeJSON_internal(FILE* f, AST_Node* node, int indent) {
+// Internal Recursive Helper
+static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
     if (node == NULL) {
-        fputs("null", f);
+        fprintf(f, "null");
         return;
     }
 
     switch (node->type) {
-        case NODE_BLOCK: {
-            fputs("{\"nodeType\":\"NODE_BLOCK\",\"statements\": [", f);
-            for (int i = 0; i < node->data.block.count; ++i) {
-                if (i) fputs(",", f);
-                writeNodeJSON_internal(f, node->data.block.statements[i], indent + 2);
+        // --- LEAF NODES ---
+        case NODE_LITERAL:
+            fprintf(f, "%s", node->data.literal.token.lexeme);
+            break;
+
+        case NODE_IDENTIFIER:
+            fprintf(f, "%s", node->data.identifier.token.lexeme);
+            break;
+
+        // --- BINARY OP: (+ 10 5) ---
+        case NODE_BINARY_OP:
+            fprintf(f, "(%s ", node->data.binaryOp.op.lexeme);
+            writeNodeSExpr_internal(f, node->data.binaryOp.left);
+            fprintf(f, " ");
+            writeNodeSExpr_internal(f, node->data.binaryOp.right);
+            fprintf(f, ")");
+            break;
+
+        // --- UNARY OP: (- 5) ---
+        case NODE_UNARY_OP:
+            fprintf(f, "(%s ", node->data.unaryOp.op.lexeme);
+            writeNodeSExpr_internal(f, node->data.unaryOp.right);
+            fprintf(f, ")");
+            break;
+
+        // --- ASSIGNMENT: (ASSIGN x 10) ---
+        case NODE_ASSIGN:
+            fprintf(f, "(ASSIGN %s ", node->data.assign.identifier.lexeme);
+            writeNodeSExpr_internal(f, node->data.assign.expression);
+            fprintf(f, ")");
+            break;
+
+        // --- DECLARATION: (DECL (int) (x)) ---
+        case NODE_DECLARE_ASSIGN:
+            // UPDATED HERE: Uses "DECL" keyword
+            fprintf(f, "(DECL (%s) (%s)", 
+                node->data.declareAssign.type.lexeme,
+                node->data.declareAssign.identifier.lexeme);
+            
+            // If initialized (e.g., int x = 5), add value
+            if (node->data.declareAssign.expression) {
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.declareAssign.expression);
             }
-            fputs("]}", f);
+            fprintf(f, ")");
             break;
-        }
-        case NODE_LITERAL: {
-            fputs("{\"nodeType\":\"NODE_LITERAL\",\"token\":", f);
-            writeTokenJSON(f, node->data.literal.token);
-            fputs("}", f);
+
+        // --- IF STATEMENT ---
+        case NODE_IF_STMT:
+            fprintf(f, "(IF_STMT ");
+            writeNodeSExpr_internal(f, node->data.ifStmt.condition);
+            fprintf(f, " ");
+            
+            // Print the "Then" block
+            writeNodeSExpr_internal(f, node->data.ifStmt.thenBranch);
+            
+            // Check if there is an Else or Else If
+            if (node->data.ifStmt.elseBranch) {
+                // Check the TYPE to decide the label
+                if (node->data.ifStmt.elseBranch->type == NODE_IF_STMT) {
+                    fprintf(f, " (ELSEIF "); // It's a nested IF -> "ELSEIF"
+                } else {
+                    fprintf(f, " (ELSE ");   // It's a block -> "ELSE"
+                }
+                
+                writeNodeSExpr_internal(f, node->data.ifStmt.elseBranch);
+                fprintf(f, ")"); // Close the ELSE/ELSEIF tag
+            }
+            fprintf(f, ")");
             break;
-        }
-        case NODE_IDENTIFIER: {
-            fputs("{\"nodeType\":\"NODE_IDENTIFIER\",\"token\":", f);
-            writeTokenJSON(f, node->data.identifier.token);
-            fputs("}", f);
-            break;
-        }
-        case NODE_UNARY_OP: {
-            fputs("{\"nodeType\":\"NODE_UNARY_OP\",\"op\":", f);
-            writeTokenJSON(f, node->data.unaryOp.op);
-            fputs(",\"right\":", f);
-            writeNodeJSON_internal(f, node->data.unaryOp.right, indent + 2);
-            fputs("}", f);
-            break;
-        }
-        case NODE_BINARY_OP: {
-            fputs("{\"nodeType\":\"NODE_BINARY_OP\",\"op\":", f);
-            writeTokenJSON(f, node->data.binaryOp.op);
-            fputs(",\"left\":", f);
-            writeNodeJSON_internal(f, node->data.binaryOp.left, indent + 2);
-            fputs(",\"right\":", f);
-            writeNodeJSON_internal(f, node->data.binaryOp.right, indent + 2);
-            fputs("}", f);
-            break;
-        }
-        case NODE_ASSIGN: {
-            fputs("{\"nodeType\":\"NODE_ASSIGN\",\"identifier\":", f);
-            writeTokenJSON(f, node->data.assign.identifier);
-            fputs(",\"expression\":", f);
-            writeNodeJSON_internal(f, node->data.assign.expression, indent + 2);
-            fputs("}", f);
-            break;
-        }
-        case NODE_DECLARE_ASSIGN: {
-            fputs("{\"nodeType\":\"NODE_DECLARE_ASSIGN\",\"typeToken\":", f);
-            writeTokenJSON(f, node->data.declareAssign.type);
-            fputs(",\"identifier\":", f);
-            writeTokenJSON(f, node->data.declareAssign.identifier);
-            fputs(",\"expression\":", f);
-            writeNodeJSON_internal(f, node->data.declareAssign.expression, indent + 2);
-            fputs("}", f);
-            break;
-        }
-        case NODE_IF_STMT: {
-            fputs("{\"nodeType\":\"NODE_IF_STMT\",\"condition\":", f);
-            writeNodeJSON_internal(f, node->data.ifStmt.condition, indent + 2);
-            fputs(",\"thenBranch\":", f);
-            writeNodeJSON_internal(f, node->data.ifStmt.thenBranch, indent + 2);
-            fputs(",\"elseBranch\":", f);
-            writeNodeJSON_internal(f, node->data.ifStmt.elseBranch, indent + 2);
-            fputs("}", f);
-            break;
-        }
-        case NODE_FOR_STMT: {
-            fputs("{\"nodeType\":\"NODE_FOR_STMT\",\"identifier\":", f);
-            writeTokenJSON(f, node->data.forStmt.identifier);
-            fputs(",\"rangeArgs\": [", f);
+
+        // --- FOR LOOP ---
+        case NODE_FOR_STMT:
+            fprintf(f, "(FOR_STMT %s (RANGE", node->data.forStmt.identifier.lexeme);
             for (int i = 0; i < node->data.forStmt.argCount; ++i) {
-                if (i) fputs(",", f);
-                writeNodeJSON_internal(f, node->data.forStmt.rangeArgs[i], indent + 2);
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.forStmt.rangeArgs[i]);
             }
-            fputs("]", f);
-            fputs(",\"body\":", f);
-            writeNodeJSON_internal(f, node->data.forStmt.body, indent + 2);
-            fputs("}", f);
+            fprintf(f, ") ");
+            writeNodeSExpr_internal(f, node->data.forStmt.body);
+            fprintf(f, ")");
             break;
-        }
-        case NODE_READ_STMT: {
-            fputs("{\"nodeType\":\"NODE_READ_STMT\",\"identifier\":", f);
-            writeTokenJSON(f, node->data.readStmt.identifier);
-            fputs("}", f);
+
+        // --- BLOCKS ---
+        case NODE_BLOCK:
+            fprintf(f, "(BLOCK");
+            for (int i = 0; i < node->data.block.count; ++i) {
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.block.statements[i]);
+            }
+            fprintf(f, ")");
             break;
-        }
-        case NODE_WRITE_STMT: {
-            fputs("{\"nodeType\":\"NODE_WRITE_STMT\",\"expressions\": [", f);
+
+        // --- I/O ---
+        case NODE_READ_STMT:
+            fprintf(f, "(READ %s)", node->data.readStmt.identifier.lexeme);
+            break;
+
+        case NODE_WRITE_STMT:
+            fprintf(f, "(WRITE");
             for (int i = 0; i < node->data.writeStmt.argCount; ++i) {
-                if (i) fputs(",", f);
-                writeNodeJSON_internal(f, node->data.writeStmt.expressions[i], indent + 2);
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.writeStmt.expressions[i]);
             }
-            fputs("]}", f);
+            fprintf(f, ")");
             break;
-        }
-        default: {
-            fputs("{\"nodeType\":\"UNKNOWN\"}", f);
+
+        default:
+            fprintf(f, "(UNKNOWN)");
             break;
-        }
     }
 }
 
-// Public: write root AST to a JSON file
-void writeASTToJSONFile(const char* filepath, AST_Node* root) {
+// Public Function to Write the File
+void writeAST_SExpr(const char* filepath, AST_Node* root) {
     FILE* f = fopen(filepath, "w");
     if (!f) {
-        fprintf(stderr, "Failed to open AST JSON file for writing: %s\n", filepath);
+        fprintf(stderr, "Failed to open output file: %s\n", filepath);
         return;
     }
-    writeNodeJSON_internal(f, root, 0);
-    fputc('\n', f);
+
+    // If root is a block, print each top-level statement on a new line
+    // to keep the file clean and readable.
+    if (root && root->type == NODE_BLOCK) {
+        for (int i = 0; i < root->data.block.count; ++i) {
+            writeNodeSExpr_internal(f, root->data.block.statements[i]);
+            fprintf(f, "\n");
+        }
+    } else {
+        writeNodeSExpr_internal(f, root);
+        fprintf(f, "\n");
+    }
+
     fclose(f);
-    printf("Wrote AST JSON to %s\n", filepath);
+    printf("Wrote AST to %s\n", filepath);
 }
 #pragma endregion
 
@@ -1351,7 +1329,7 @@ int main() {
     printf("---------------------------\n");
 
     // Write AST to JSON file for semantic analyzer
-    writeASTToJSONFile("c:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\ast.json", root);
+    writeAST_SExpr("c:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\ast.json", root);
 
     // Free all allocated memory
     freeAST(root);
