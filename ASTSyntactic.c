@@ -10,6 +10,10 @@
 // AST Node
 #define INITIAL_BLOCK_STATEMENTS 8
 
+/* =========================
+   DEFINITIONS & ENUMERATIONS
+   ========================= */
+
 #pragma region Token Definitions
 // Token Type Enumeration
 typedef enum {
@@ -209,446 +213,25 @@ struct AST_Node {
 };
 #pragma endregion
 
-#pragma region AST functions
-// reusable create node function
-AST_Node* createNode(NodeType type) {
-    AST_Node* node = (AST_Node*)malloc(sizeof(AST_Node));
-    if (!node) {
-        fprintf(stderr, "AST: Failed to allocate node\n");
-        exit(1);
-    }
-    node->type = type;
-    return node;
-}
+/* =========================
+   FUNCTION PROTOTYPES
+   ========================= */
 
-//specific nodes
+#pragma region Function Prototypes
+/* Token / Loader */
+void loadTokensFromSymbolTable(const char* filepath);
+Token peek();
+Token previous();
+Token advance();
+Token expect(Token_Type type);
+Token_Type revertToTokenType(const char* parsedType);
+bool match(Token_Type type);
+bool atEnd();
+void handleDo();
+void handleComments();
 
-AST_Node* createLiteralNode(Token token) {
-    AST_Node* node = createNode(NODE_LITERAL);
-    node->data.literal.token = token;
-    return node;
-}
-
-AST_Node* createIdentifierNode(Token token) {
-    AST_Node* node = createNode(NODE_IDENTIFIER);
-    node->data.identifier.token = token;
-    return node;
-}
-
-AST_Node* createUnaryOpNode(Token op, AST_Node* right) {
-    AST_Node* node = createNode(NODE_UNARY_OP);
-    node->data.unaryOp.op = op;
-    node->data.unaryOp.right = right;
-    return node;
-}
-
-AST_Node* createBinaryOpNode(Token op, AST_Node* left, AST_Node* right) {
-    AST_Node* node = createNode(NODE_BINARY_OP);
-    node->data.binaryOp.op = op;
-    node->data.binaryOp.left = left;
-    node->data.binaryOp.right = right;
-    return node;
-}
-
-AST_Node* createAssignNode(Token identifier, AST_Node* expression) {
-    AST_Node* node = createNode(NODE_ASSIGN);
-    node->data.assign.identifier = identifier;
-    node->data.assign.expression = expression;
-    return node;
-}
-
-AST_Node* createDeclareAssignNode(Token type, Token identifier, AST_Node* expression) {
-    AST_Node* node = createNode(NODE_DECLARE_ASSIGN);
-    node->data.declareAssign.type = type;
-    node->data.declareAssign.identifier = identifier;
-    node->data.declareAssign.expression = expression;
-    return node;
-}
-
-AST_Node* createIfStmtNode(AST_Node* condition, AST_Node* thenBranch, AST_Node* elseBranch) {
-    AST_Node* node = createNode(NODE_IF_STMT);
-    node->data.ifStmt.condition = condition;
-    node->data.ifStmt.thenBranch = thenBranch;
-    node->data.ifStmt.elseBranch = elseBranch;
-    return node;
-}
-
-AST_Node* createForStmtNode(Token identifier, AST_Node* body) {
-    AST_Node* node = createNode(NODE_FOR_STMT);
-    node->data.forStmt.identifier = identifier;
-    node->data.forStmt.body = body;
-    node->data.forStmt.argCount = 0;
-
-    // start with capacity of 3 args
-    node->data.forStmt.rangeArgs = (AST_Node**)malloc(sizeof(AST_Node*) * 3);
-    if (!node->data.forStmt.rangeArgs) {
-        fprintf(stderr, "AST: Failed to allocate FOR range args\n");
-        exit(1);
-    }
-    return node;
-}
-
-//helper function for range function
-void addForRangeArg(AST_Node* forNode, AST_Node* arg) {
-    if (forNode->type != NODE_FOR_STMT || forNode->data.forStmt.argCount >= 3) {
-        return; 
-    }
-    forNode->data.forStmt.rangeArgs[forNode->data.forStmt.argCount++] = arg;
-}
-
-AST_Node* createReadStmtNode(Token identifier) {
-    AST_Node* node = createNode(NODE_READ_STMT);
-    node->data.readStmt.identifier = identifier;
-    return node;
-}
-
-AST_Node* createWriteStmtNode() {
-    AST_Node* node = createNode(NODE_WRITE_STMT);
-    node->data.writeStmt.argCount = 0;
-    node->data.writeStmt.capacity = INITIAL_BLOCK_STATEMENTS;
-    node->data.writeStmt.expressions = (AST_Node**)malloc(sizeof(AST_Node*) * node->data.writeStmt.capacity);
-    if (!node->data.writeStmt.expressions) {
-        fprintf(stderr, "AST: Failed to allocate WRITE expressions\n");
-        exit(1);
-    }
-    return node;
-}
-
-void addWriteExpression(AST_Node* writeNode, AST_Node* expr) {
-    if (writeNode->type != NODE_WRITE_STMT) return;
-    WriteStmtNode* data = &writeNode->data.writeStmt;
-    
-    // resize if capacity is not enough
-    if (data->argCount >= data->capacity) {
-        data->capacity *= 2;
-        data->expressions = (AST_Node**)realloc(data->expressions, sizeof(AST_Node*) * data->capacity);
-        if (!data->expressions) {
-            fprintf(stderr, "AST: Failed to reallocate WRITE expressions\n");
-            exit(1);
-        }
-    }
-    data->expressions[data->argCount++] = expr;
-}
-
-AST_Node* createBlockNode() {
-    AST_Node* node = createNode(NODE_BLOCK);
-    node->data.block.count = 0;
-    node->data.block.capacity = INITIAL_BLOCK_STATEMENTS;
-    node->data.block.statements = (AST_Node**)malloc(sizeof(AST_Node*) * node->data.block.capacity);
-    if (!node->data.block.statements) {
-        fprintf(stderr, "AST: Failed to allocate BLOCK statements\n");
-        exit(1);
-    }
-    return node;
-}
-
-void addStatementToBlock(AST_Node* blockNode, AST_Node* statement) {
-    if (blockNode->type != NODE_BLOCK || statement == NULL) return;
-    BlockNode* data = &blockNode->data.block;
-
-    // resize if capacity is not enough
-    if (data->count >= data->capacity) {
-        data->capacity *= 2;
-        data->statements = (AST_Node**)realloc(data->statements, sizeof(AST_Node*) * data->capacity);
-        if (!data->statements) {
-            fprintf(stderr, "AST: Failed to reallocate BLOCK statements\n");
-            exit(1);
-        }
-    }
-    data->statements[data->count++] = statement;
-}
-
-#pragma endregion
-
-#pragma region AST Terminal Printing Function
-void printAST(AST_Node* node, int indent) {
-    if (node == NULL) {
-        printf("%*s(NULL)\n", indent, "");
-        return;
-    }
-
-    printf("%*s", indent, "");
-
-    switch (node->type) {
-        case NODE_BLOCK:
-            printf("[Block]\n");
-            for (int i = 0; i < node->data.block.count; i++) {
-                printAST(node->data.block.statements[i], indent + 2);
-            }
-            break;
-        case NODE_LITERAL:
-            printf("(Literal: %s)\n", node->data.literal.token.lexeme);
-            break;
-        case NODE_IDENTIFIER:
-            printf("(Identifier: %s)\n", node->data.identifier.token.lexeme);
-            break;
-        case NODE_UNARY_OP:
-            printf("(UnaryOp: %s)\n", node->data.unaryOp.op.lexeme);
-            printAST(node->data.unaryOp.right, indent + 2);
-            break;
-        case NODE_BINARY_OP:
-            printf("(BinaryOp: %s)\n", node->data.binaryOp.op.lexeme);
-            printAST(node->data.binaryOp.left, indent + 2);
-            printAST(node->data.binaryOp.right, indent + 2);
-            break;
-        case NODE_ASSIGN:
-            printf("(Assign: %s)\n", node->data.assign.identifier.lexeme);
-            printAST(node->data.assign.expression, indent + 2);
-            break;
-        case NODE_DECLARE_ASSIGN:
-            printf("(Declare %s: %s)\n", 
-                node->data.declareAssign.type.lexeme, 
-                node->data.declareAssign.identifier.lexeme);
-            if (node->data.declareAssign.expression) {
-                printAST(node->data.declareAssign.expression, indent + 2);
-            }
-            break;
-        case NODE_IF_STMT:
-            printf("[If]\n");
-            printf("%*s(Condition)\n", indent + 2, "");
-            printAST(node->data.ifStmt.condition, indent + 4);
-            printf("%*s(Then)\n", indent + 2, "");
-            printAST(node->data.ifStmt.thenBranch, indent + 4);
-            if (node->data.ifStmt.elseBranch) {
-                printf("%*s(Else)\n", indent + 2, "");
-                printAST(node->data.ifStmt.elseBranch, indent + 4);
-            }
-            break;
-        case NODE_FOR_STMT:
-            printf("[For %s in range(...)]\n", node->data.forStmt.identifier.lexeme);
-            for(int i = 0; i < node->data.forStmt.argCount; i++) {
-                printf("%*s(Range Arg %d)\n", indent + 2, "", i+1);
-                printAST(node->data.forStmt.rangeArgs[i], indent + 4);
-            }
-            printf("%*s(Body)\n", indent + 2, "");
-            printAST(node->data.forStmt.body, indent + 4);
-            break;
-        case NODE_READ_STMT:
-            printf("(Read: %s)\n", node->data.readStmt.identifier.lexeme);
-            break;
-        case NODE_WRITE_STMT:
-            printf("[Write]\n");
-            for (int i = 0; i < node->data.writeStmt.argCount; i++) {
-                printAST(node->data.writeStmt.expressions[i], indent + 2);
-            }
-            break;
-        default:
-            printf("(Unknown Node)\n");
-            break;
-    }
-}
-
-#pragma endregion
-
-#pragma region AST Memory Freeing Function
-
-void freeAST(AST_Node* node) {
-    if (node == NULL) return;
-
-    switch (node->type) {
-        case NODE_UNARY_OP:
-            freeAST(node->data.unaryOp.right);
-            break;
-        case NODE_BINARY_OP:
-            freeAST(node->data.binaryOp.left);
-            freeAST(node->data.binaryOp.right);
-            break;
-        case NODE_ASSIGN:
-            freeAST(node->data.assign.expression);
-            break;
-        case NODE_DECLARE_ASSIGN:
-            freeAST(node->data.declareAssign.expression); 
-            break;
-        case NODE_IF_STMT:
-            freeAST(node->data.ifStmt.condition);
-            freeAST(node->data.ifStmt.thenBranch);
-            freeAST(node->data.ifStmt.elseBranch);
-            break;
-        case NODE_FOR_STMT:
-            for (int i = 0; i < node->data.forStmt.argCount; i++) {
-                freeAST(node->data.forStmt.rangeArgs[i]);
-            }
-            free(node->data.forStmt.rangeArgs);
-            freeAST(node->data.forStmt.body);
-            break;
-        case NODE_WRITE_STMT:
-            for (int i = 0; i < node->data.writeStmt.argCount; i++) {
-                freeAST(node->data.writeStmt.expressions[i]);
-            }
-            free(node->data.writeStmt.expressions);
-            break;
-        case NODE_BLOCK:
-            for (int i = 0; i < node->data.block.count; i++) {
-                freeAST(node->data.block.statements[i]);
-            }
-            free(node->data.block.statements);
-            break;
-        
-        case NODE_LITERAL:
-        case NODE_IDENTIFIER:
-        case NODE_READ_STMT:
-            break;
-    }
-    
-    // free the node 
-    free(node);
-}
-
-#pragma endregion
-
-#pragma region JSON Printing Function
-
-static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
-
-static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
-    if (node == NULL) {
-        fprintf(f, "null");
-        return;
-    }
-
-    switch (node->type) {
-        //leaf nodes
-        case NODE_LITERAL:
-            fprintf(f, "%s", node->data.literal.token.lexeme);
-            break;
-
-        case NODE_IDENTIFIER:
-            fprintf(f, "%s", node->data.identifier.token.lexeme);
-            break;
-
-        case NODE_BINARY_OP:
-            fprintf(f, "(%s ", node->data.binaryOp.op.lexeme);
-            
-            fprintf(f, "("); // Wrap Left
-            writeNodeSExpr_internal(f, node->data.binaryOp.left);
-            fprintf(f, ") ("); // Close Left, Wrap Right
-            writeNodeSExpr_internal(f, node->data.binaryOp.right);
-            fprintf(f, "))"); // Close Right, Close Op
-            break;
-
-        case NODE_UNARY_OP:
-            fprintf(f, "(%s ", node->data.unaryOp.op.lexeme);
-            
-            fprintf(f, "("); // Wrap Operand
-            writeNodeSExpr_internal(f, node->data.unaryOp.right);
-            fprintf(f, "))"); // Close Operand, Close Op
-            break;
-
-        case NODE_ASSIGN:
-            fprintf(f, "(ASSIGN (%s) (", node->data.assign.identifier.lexeme);
-            writeNodeSExpr_internal(f, node->data.assign.expression);
-            fprintf(f, "))");
-            break;
-
-        case NODE_DECLARE_ASSIGN:
-            fprintf(f, "(DECL (%s) (%s)", 
-                node->data.declareAssign.type.lexeme,
-                node->data.declareAssign.identifier.lexeme);
-            
-            if (node->data.declareAssign.expression) {
-                fprintf(f, " ");
-                writeNodeSExpr_internal(f, node->data.declareAssign.expression);
-            }
-            fprintf(f, ")");
-            break;
-
-        case NODE_IF_STMT:
-            fprintf(f, "(IF_STMT ");
-            writeNodeSExpr_internal(f, node->data.ifStmt.condition);
-            fprintf(f, " ");
-            
-            //print Then block
-            writeNodeSExpr_internal(f, node->data.ifStmt.thenBranch);
-            
-            //check if there is an Else or Else If
-            if (node->data.ifStmt.elseBranch) {
-                // Check type to decide the label
-                if (node->data.ifStmt.elseBranch->type == NODE_IF_STMT) {
-                    fprintf(f, " (ELSEIF "); //If elseif
-                } else {
-                    fprintf(f, " (ELSE ");   //else
-                }
-                
-                writeNodeSExpr_internal(f, node->data.ifStmt.elseBranch);
-                fprintf(f, ")"); // Close else/elseif tag
-            }
-            fprintf(f, ")");
-            break;
-
-        case NODE_FOR_STMT:
-            fprintf(f, "(FOR_STMT %s (RANGE", node->data.forStmt.identifier.lexeme);
-            for (int i = 0; i < node->data.forStmt.argCount; ++i) {
-                fprintf(f, " ");
-                writeNodeSExpr_internal(f, node->data.forStmt.rangeArgs[i]);
-            }
-            fprintf(f, ") ");
-            writeNodeSExpr_internal(f, node->data.forStmt.body);
-            fprintf(f, ")");
-            break;
-
-        case NODE_BLOCK:
-            fprintf(f, "(BLOCK");
-            for (int i = 0; i < node->data.block.count; ++i) {
-                fprintf(f, " ");
-                writeNodeSExpr_internal(f, node->data.block.statements[i]);
-            }
-            fprintf(f, ")");
-            break;
-
-        case NODE_READ_STMT:
-            fprintf(f, "(READ (%s))", node->data.readStmt.identifier.lexeme);
-            break;
-
-        case NODE_WRITE_STMT:
-            fprintf(f, "(WRITE");
-            for (int i = 0; i < node->data.writeStmt.argCount; ++i) {
-                fprintf(f, " ("); // Open wrapper for this argument
-                writeNodeSExpr_internal(f, node->data.writeStmt.expressions[i]);
-                fprintf(f, ")");  // Close wrapper
-            }
-            fprintf(f, ")");
-            break;
-
-        default:
-            fprintf(f, "(UNKNOWN)");
-            break;
-    }
-}
-
-// Public Function to Write the File
-void writeAST_SExpr(const char* filepath, AST_Node* root) {
-    FILE* f = fopen(filepath, "w");
-    if (!f) {
-        fprintf(stderr, "Failed to open output file: %s\n", filepath);
-        return;
-    }
-
-    // If root is a block, print each top-level statement on a new line
-    // to keep the file clean and readable.
-    if (root && root->type == NODE_BLOCK) {
-        for (int i = 0; i < root->data.block.count; ++i) {
-            writeNodeSExpr_internal(f, root->data.block.statements[i]);
-            fprintf(f, "\n");
-        }
-    } else {
-        writeNodeSExpr_internal(f, root);
-        fprintf(f, "\n");
-    }
-
-    fclose(f);
-    printf("Wrote AST to %s\n", filepath);
-}
-#pragma endregion
-
-#pragma region Parser Declarations
-
-Token* tokens;
-int curToken = 0;
-
-// Global token storage (already declared earlier as Token* tokens; int curToken;)
-int token_count = 0;
-int token_capacity = 0;
-
+/* Parser top-level */
+AST_Node* parse();
 AST_Node* parseStatement();
 AST_Node* parseDeclareAssign();
 AST_Node* parseAssign();
@@ -668,11 +251,91 @@ AST_Node* parseUnaryExpression();
 AST_Node* parseValueExpression();
 AST_Node* parseBlocks();
 AST_Node* parseElse();
-
-bool atEnd();
 void reportSyntaxError(const char* msg);
 
+/* AST helpers */
+AST_Node* createNode(NodeType type);
+AST_Node* createLiteralNode(Token token);
+AST_Node* createIdentifierNode(Token token);
+AST_Node* createUnaryOpNode(Token op, AST_Node* right);
+AST_Node* createBinaryOpNode(Token op, AST_Node* left, AST_Node* right);
+AST_Node* createAssignNode(Token identifier, AST_Node* expression);
+AST_Node* createDeclareAssignNode(Token type, Token identifier, AST_Node* expression);
+AST_Node* createIfStmtNode(AST_Node* condition, AST_Node* thenBranch, AST_Node* elseBranch);
+AST_Node* createForStmtNode(Token identifier, AST_Node* body);
+void addForRangeArg(AST_Node* forNode, AST_Node* arg);
+AST_Node* createReadStmtNode(Token identifier);
+AST_Node* createWriteStmtNode();
+void addWriteExpression(AST_Node* writeNode, AST_Node* expr);
+AST_Node* createBlockNode();
+void addStatementToBlock(AST_Node* blockNode, AST_Node* statement);
+void printAST(AST_Node* node, int indent);
+void writeAST_SExpr(const char* filepath, AST_Node* root);
+void freeAST(AST_Node* node);
+
+/* JSON writer internal */
+static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
+
+/* Utility */
+static char* trim(char* s);
+static void ensureTokenCapacity();
+static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz);
 #pragma endregion
+
+/* =========================
+   GLOBAL VARIABLES
+   ========================= */
+
+Token* tokens = NULL;
+int curToken = 0;
+int token_count = 0;
+int token_capacity = 0;
+
+/* =========================
+   int main
+   ========================= */
+
+int main() {
+    // Early debug to confirm program start
+    printf("PROGRAM START\n");
+    fflush(stdout);
+
+    // Allocate tokens pointer and load from uploaded symbol table
+    tokens = NULL; // Loader will allocate
+    loadTokensFromSymbolTable("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt"); 
+
+    // Call top-level parser function
+    printf("\n--- Parsing Program ---\n");
+    AST_Node* root = parse();
+    printf("--- Parsing Finished ---\n");
+
+    // Debug: print loaded token count and some tokens for verification
+    printf("\n--- DEBUG: Loaded Tokens ---\n");
+    printf("Total tokens: %d\n", token_count);
+    for (int i = 0; i < token_count && i < 20; ++i) {
+        printf("[%02d] %s : '%s'\n", i, tokenTypeStrings[tokens[i].type], tokens[i].lexeme);
+    }
+    fflush(stdout);
+
+    // Print the generated AST
+    printf("\n--- Abstract Syntax Tree ---\n");
+    printAST(root, 0);
+    printf("---------------------------\n");
+
+    // Write AST to JSON file for semantic analyzer
+    writeAST_SExpr("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\ast.json", root);
+
+    // Free all allocated memory
+    freeAST(root);
+    free(tokens); // Free the token array itself
+    
+    printf("\nAST memory freed. Program complete.\n");
+    return 0;
+}
+
+/* =========================
+   FUNCTION IMPLEMENTATIONS
+   ========================= */
 
 #pragma region Parser Helper Functions
 
@@ -1153,6 +816,437 @@ AST_Node* parseValueExpression(){
 }
 #pragma endregion
 
+#pragma region AST functions
+// reusable create node function
+AST_Node* createNode(NodeType type) {
+    AST_Node* node = (AST_Node*)malloc(sizeof(AST_Node));
+    if (!node) {
+        fprintf(stderr, "AST: Failed to allocate node\n");
+        exit(1);
+    }
+    node->type = type;
+    return node;
+}
+
+//specific nodes
+
+AST_Node* createLiteralNode(Token token) {
+    AST_Node* node = createNode(NODE_LITERAL);
+    node->data.literal.token = token;
+    return node;
+}
+
+AST_Node* createIdentifierNode(Token token) {
+    AST_Node* node = createNode(NODE_IDENTIFIER);
+    node->data.identifier.token = token;
+    return node;
+}
+
+AST_Node* createUnaryOpNode(Token op, AST_Node* right) {
+    AST_Node* node = createNode(NODE_UNARY_OP);
+    node->data.unaryOp.op = op;
+    node->data.unaryOp.right = right;
+    return node;
+}
+
+AST_Node* createBinaryOpNode(Token op, AST_Node* left, AST_Node* right) {
+    AST_Node* node = createNode(NODE_BINARY_OP);
+    node->data.binaryOp.op = op;
+    node->data.binaryOp.left = left;
+    node->data.binaryOp.right = right;
+    return node;
+}
+
+AST_Node* createAssignNode(Token identifier, AST_Node* expression) {
+    AST_Node* node = createNode(NODE_ASSIGN);
+    node->data.assign.identifier = identifier;
+    node->data.assign.expression = expression;
+    return node;
+}
+
+AST_Node* createDeclareAssignNode(Token type, Token identifier, AST_Node* expression) {
+    AST_Node* node = createNode(NODE_DECLARE_ASSIGN);
+    node->data.declareAssign.type = type;
+    node->data.declareAssign.identifier = identifier;
+    node->data.declareAssign.expression = expression;
+    return node;
+}
+
+AST_Node* createIfStmtNode(AST_Node* condition, AST_Node* thenBranch, AST_Node* elseBranch) {
+    AST_Node* node = createNode(NODE_IF_STMT);
+    node->data.ifStmt.condition = condition;
+    node->data.ifStmt.thenBranch = thenBranch;
+    node->data.ifStmt.elseBranch = elseBranch;
+    return node;
+}
+
+AST_Node* createForStmtNode(Token identifier, AST_Node* body) {
+    AST_Node* node = createNode(NODE_FOR_STMT);
+    node->data.forStmt.identifier = identifier;
+    node->data.forStmt.body = body;
+    node->data.forStmt.argCount = 0;
+
+    // start with capacity of 3 args
+    node->data.forStmt.rangeArgs = (AST_Node**)malloc(sizeof(AST_Node*) * 3);
+    if (!node->data.forStmt.rangeArgs) {
+        fprintf(stderr, "AST: Failed to allocate FOR range args\n");
+        exit(1);
+    }
+    return node;
+}
+
+//helper function for range function
+void addForRangeArg(AST_Node* forNode, AST_Node* arg) {
+    if (forNode->type != NODE_FOR_STMT || forNode->data.forStmt.argCount >= 3) {
+        return; 
+    }
+    forNode->data.forStmt.rangeArgs[forNode->data.forStmt.argCount++] = arg;
+}
+
+AST_Node* createReadStmtNode(Token identifier) {
+    AST_Node* node = createNode(NODE_READ_STMT);
+    node->data.readStmt.identifier = identifier;
+    return node;
+}
+
+AST_Node* createWriteStmtNode() {
+    AST_Node* node = createNode(NODE_WRITE_STMT);
+    node->data.writeStmt.argCount = 0;
+    node->data.writeStmt.capacity = INITIAL_BLOCK_STATEMENTS;
+    node->data.writeStmt.expressions = (AST_Node**)malloc(sizeof(AST_Node*) * node->data.writeStmt.capacity);
+    if (!node->data.writeStmt.expressions) {
+        fprintf(stderr, "AST: Failed to allocate WRITE expressions\n");
+        exit(1);
+    }
+    return node;
+}
+
+void addWriteExpression(AST_Node* writeNode, AST_Node* expr) {
+    if (writeNode->type != NODE_WRITE_STMT) return;
+    WriteStmtNode* data = &writeNode->data.writeStmt;
+    
+    // resize if capacity is not enough
+    if (data->argCount >= data->capacity) {
+        data->capacity *= 2;
+        data->expressions = (AST_Node**)realloc(data->expressions, sizeof(AST_Node*) * data->capacity);
+        if (!data->expressions) {
+            fprintf(stderr, "AST: Failed to reallocate WRITE expressions\n");
+            exit(1);
+        }
+    }
+    data->expressions[data->argCount++] = expr;
+}
+
+AST_Node* createBlockNode() {
+    AST_Node* node = createNode(NODE_BLOCK);
+    node->data.block.count = 0;
+    node->data.block.capacity = INITIAL_BLOCK_STATEMENTS;
+    node->data.block.statements = (AST_Node**)malloc(sizeof(AST_Node*) * node->data.block.capacity);
+    if (!node->data.block.statements) {
+        fprintf(stderr, "AST: Failed to allocate BLOCK statements\n");
+        exit(1);
+    }
+    return node;
+}
+
+void addStatementToBlock(AST_Node* blockNode, AST_Node* statement) {
+    if (blockNode->type != NODE_BLOCK || statement == NULL) return;
+    BlockNode* data = &blockNode->data.block;
+
+    // resize if capacity is not enough
+    if (data->count >= data->capacity) {
+        data->capacity *= 2;
+        data->statements = (AST_Node**)realloc(data->statements, sizeof(AST_Node*) * data->capacity);
+        if (!data->statements) {
+            fprintf(stderr, "AST: Failed to reallocate BLOCK statements\n");
+            exit(1);
+        }
+    }
+    data->statements[data->count++] = statement;
+}
+
+#pragma endregion
+
+#pragma region AST Terminal Printing Function
+void printAST(AST_Node* node, int indent) {
+    if (node == NULL) {
+        printf("%*s(NULL)\n", indent, "");
+        return;
+    }
+
+    printf("%*s", indent, "");
+
+    switch (node->type) {
+        case NODE_BLOCK:
+            printf("[Block]\n");
+            for (int i = 0; i < node->data.block.count; i++) {
+                printAST(node->data.block.statements[i], indent + 2);
+            }
+            break;
+        case NODE_LITERAL:
+            printf("(Literal: %s)\n", node->data.literal.token.lexeme);
+            break;
+        case NODE_IDENTIFIER:
+            printf("(Identifier: %s)\n", node->data.identifier.token.lexeme);
+            break;
+        case NODE_UNARY_OP:
+            printf("(UnaryOp: %s)\n", node->data.unaryOp.op.lexeme);
+            printAST(node->data.unaryOp.right, indent + 2);
+            break;
+        case NODE_BINARY_OP:
+            printf("(BinaryOp: %s)\n", node->data.binaryOp.op.lexeme);
+            printAST(node->data.binaryOp.left, indent + 2);
+            printAST(node->data.binaryOp.right, indent + 2);
+            break;
+        case NODE_ASSIGN:
+            printf("(Assign: %s)\n", node->data.assign.identifier.lexeme);
+            printAST(node->data.assign.expression, indent + 2);
+            break;
+        case NODE_DECLARE_ASSIGN:
+            printf("(Declare %s: %s)\n", 
+                node->data.declareAssign.type.lexeme, 
+                node->data.declareAssign.identifier.lexeme);
+            if (node->data.declareAssign.expression) {
+                printAST(node->data.declareAssign.expression, indent + 2);
+            }
+            break;
+        case NODE_IF_STMT:
+            printf("[If]\n");
+            printf("%*s(Condition)\n", indent + 2, "");
+            printAST(node->data.ifStmt.condition, indent + 4);
+            printf("%*s(Then)\n", indent + 2, "");
+            printAST(node->data.ifStmt.thenBranch, indent + 4);
+            if (node->data.ifStmt.elseBranch) {
+                printf("%*s(Else)\n", indent + 2, "");
+                printAST(node->data.ifStmt.elseBranch, indent + 4);
+            }
+            break;
+        case NODE_FOR_STMT:
+            printf("[For %s in range(...)]\n", node->data.forStmt.identifier.lexeme);
+            for(int i = 0; i < node->data.forStmt.argCount; i++) {
+                printf("%*s(Range Arg %d)\n", indent + 2, "", i+1);
+                printAST(node->data.forStmt.rangeArgs[i], indent + 4);
+            }
+            printf("%*s(Body)\n", indent + 2, "");
+            printAST(node->data.forStmt.body, indent + 4);
+            break;
+        case NODE_READ_STMT:
+            printf("(Read: %s)\n", node->data.readStmt.identifier.lexeme);
+            break;
+        case NODE_WRITE_STMT:
+            printf("[Write]\n");
+            for (int i = 0; i < node->data.writeStmt.argCount; i++) {
+                printAST(node->data.writeStmt.expressions[i], indent + 2);
+            }
+            break;
+        default:
+            printf("(Unknown Node)\n");
+            break;
+    }
+}
+
+#pragma endregion
+
+#pragma region AST Memory Freeing Function
+
+void freeAST(AST_Node* node) {
+    if (node == NULL) return;
+
+    switch (node->type) {
+        case NODE_UNARY_OP:
+            freeAST(node->data.unaryOp.right);
+            break;
+        case NODE_BINARY_OP:
+            freeAST(node->data.binaryOp.left);
+            freeAST(node->data.binaryOp.right);
+            break;
+        case NODE_ASSIGN:
+            freeAST(node->data.assign.expression);
+            break;
+        case NODE_DECLARE_ASSIGN:
+            freeAST(node->data.declareAssign.expression); 
+            break;
+        case NODE_IF_STMT:
+            freeAST(node->data.ifStmt.condition);
+            freeAST(node->data.ifStmt.thenBranch);
+            freeAST(node->data.ifStmt.elseBranch);
+            break;
+        case NODE_FOR_STMT:
+            for (int i = 0; i < node->data.forStmt.argCount; i++) {
+                freeAST(node->data.forStmt.rangeArgs[i]);
+            }
+            free(node->data.forStmt.rangeArgs);
+            freeAST(node->data.forStmt.body);
+            break;
+        case NODE_WRITE_STMT:
+            for (int i = 0; i < node->data.writeStmt.argCount; i++) {
+                freeAST(node->data.writeStmt.expressions[i]);
+            }
+            free(node->data.writeStmt.expressions);
+            break;
+        case NODE_BLOCK:
+            for (int i = 0; i < node->data.block.count; i++) {
+                freeAST(node->data.block.statements[i]);
+            }
+            free(node->data.block.statements);
+            break;
+        
+        case NODE_LITERAL:
+        case NODE_IDENTIFIER:
+        case NODE_READ_STMT:
+            break;
+    }
+    
+    // free the node 
+    free(node);
+}
+
+#pragma endregion
+
+#pragma region JSON Printing Function
+
+static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
+
+static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
+    if (node == NULL) {
+        fprintf(f, "null");
+        return;
+    }
+
+    switch (node->type) {
+        //leaf nodes
+        case NODE_LITERAL:
+            fprintf(f, "%s", node->data.literal.token.lexeme);
+            break;
+
+        case NODE_IDENTIFIER:
+            fprintf(f, "%s", node->data.identifier.token.lexeme);
+            break;
+
+        case NODE_BINARY_OP:
+            fprintf(f, "(%s ", node->data.binaryOp.op.lexeme);
+            
+            fprintf(f, "("); // Wrap Left
+            writeNodeSExpr_internal(f, node->data.binaryOp.left);
+            fprintf(f, ") ("); // Close Left, Wrap Right
+            writeNodeSExpr_internal(f, node->data.binaryOp.right);
+            fprintf(f, "))"); // Close Right, Close Op
+            break;
+
+        case NODE_UNARY_OP:
+            fprintf(f, "(%s ", node->data.unaryOp.op.lexeme);
+            
+            fprintf(f, "("); // Wrap Operand
+            writeNodeSExpr_internal(f, node->data.unaryOp.right);
+            fprintf(f, "))"); // Close Operand, Close Op
+            break;
+
+        case NODE_ASSIGN:
+            fprintf(f, "(ASSIGN (%s) (", node->data.assign.identifier.lexeme);
+            writeNodeSExpr_internal(f, node->data.assign.expression);
+            fprintf(f, "))");
+            break;
+
+        case NODE_DECLARE_ASSIGN:
+            fprintf(f, "(DECL (%s) (%s)", 
+                node->data.declareAssign.type.lexeme,
+                node->data.declareAssign.identifier.lexeme);
+            
+            if (node->data.declareAssign.expression) {
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.declareAssign.expression);
+            }
+            fprintf(f, ")");
+            break;
+
+        case NODE_IF_STMT:
+            fprintf(f, "(IF_STMT ");
+            writeNodeSExpr_internal(f, node->data.ifStmt.condition);
+            fprintf(f, " ");
+            
+            //print Then block
+            writeNodeSExpr_internal(f, node->data.ifStmt.thenBranch);
+            
+            //check if there is an Else or Else If
+            if (node->data.ifStmt.elseBranch) {
+                // Check type to decide the label
+                if (node->data.ifStmt.elseBranch->type == NODE_IF_STMT) {
+                    fprintf(f, " (ELSEIF "); //If elseif
+                } else {
+                    fprintf(f, " (ELSE ");   //else
+                }
+                
+                writeNodeSExpr_internal(f, node->data.ifStmt.elseBranch);
+                fprintf(f, ")"); // Close else/elseif tag
+            }
+            fprintf(f, ")");
+            break;
+
+        case NODE_FOR_STMT:
+            fprintf(f, "(FOR_STMT %s (RANGE", node->data.forStmt.identifier.lexeme);
+            for (int i = 0; i < node->data.forStmt.argCount; ++i) {
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.forStmt.rangeArgs[i]);
+            }
+            fprintf(f, ") ");
+            writeNodeSExpr_internal(f, node->data.forStmt.body);
+            fprintf(f, ")");
+            break;
+
+        case NODE_BLOCK:
+            fprintf(f, "(BLOCK");
+            for (int i = 0; i < node->data.block.count; ++i) {
+                fprintf(f, " ");
+                writeNodeSExpr_internal(f, node->data.block.statements[i]);
+            }
+            fprintf(f, ")");
+            break;
+
+        case NODE_READ_STMT:
+            fprintf(f, "(READ (%s))", node->data.readStmt.identifier.lexeme);
+            break;
+
+        case NODE_WRITE_STMT:
+            fprintf(f, "(WRITE");
+            for (int i = 0; i < node->data.writeStmt.argCount; ++i) {
+                fprintf(f, " ("); // Open wrapper for this argument
+                writeNodeSExpr_internal(f, node->data.writeStmt.expressions[i]);
+                fprintf(f, ")");  // Close wrapper
+            }
+            fprintf(f, ")");
+            break;
+
+        default:
+            fprintf(f, "(UNKNOWN)");
+            break;
+    }
+}
+
+// Public Function to Write the File
+void writeAST_SExpr(const char* filepath, AST_Node* root) {
+    FILE* f = fopen(filepath, "w");
+    if (!f) {
+        fprintf(stderr, "Failed to open output file: %s\n", filepath);
+        return;
+    }
+
+    // If root is a block, print each top-level statement on a new line
+    // to keep the file clean and readable.
+    if (root && root->type == NODE_BLOCK) {
+        for (int i = 0; i < root->data.block.count; ++i) {
+            writeNodeSExpr_internal(f, root->data.block.statements[i]);
+            fprintf(f, "\n");
+        }
+    } else {
+        writeNodeSExpr_internal(f, root);
+        fprintf(f, "\n");
+    }
+
+    fclose(f);
+    printf("Wrote AST to %s\n", filepath);
+}
+#pragma endregion
+
 #pragma region Loader functions
 // Trim whitespace from both ends (in place)
 static char* trim(char* s) {
@@ -1290,45 +1384,5 @@ void loadTokensFromSymbolTable(const char* filepath) {
     curToken = 0;
     // Optional: debug print count
     printf("Loaded %d tokens from %s\n", token_count, filepath);
-}
-#pragma endregion
-
-#pragma region Main Function
-int main() {
-    // Early debug to confirm program start
-    printf("PROGRAM START\n");
-    fflush(stdout);
-
-    // Allocate tokens pointer and load from uploaded symbol table
-    tokens = NULL; // Loader will allocate
-    loadTokensFromSymbolTable("C:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\symbol_table.txt"); 
-
-    // Call top-level parser function
-    printf("\n--- Parsing Program ---\n");
-    AST_Node* root = parse();
-    printf("--- Parsing Finished ---\n");
-
-    // Debug: print loaded token count and some tokens for verification
-    printf("\n--- DEBUG: Loaded Tokens ---\n");
-    printf("Total tokens: %d\n", token_count);
-    for (int i = 0; i < token_count && i < 20; ++i) {
-        printf("[%02d] %s : '%s'\n", i, tokenTypeStrings[tokens[i].type], tokens[i].lexeme);
-    }
-    fflush(stdout);
-
-    // Print the generated AST
-    printf("\n--- Abstract Syntax Tree ---\n");
-    printAST(root, 0);
-    printf("---------------------------\n");
-
-    // Write AST to JSON file for semantic analyzer
-    writeAST_SExpr("c:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\ast.json", root);
-
-    // Free all allocated memory
-    freeAST(root);
-    free(tokens); // Free the token array itself
-    
-    printf("\nAST memory freed. Program complete.\n");
-    return 0;
 }
 #pragma endregion
