@@ -496,12 +496,10 @@ void freeAST(AST_Node* node) {
 
 #pragma endregion
 
-#pragma region JSON Printing Function //from copilot
+#pragma region JSON Printing Function
 
-// Forward declaration
 static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
 
-// Internal Recursive Helper
 static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
     if (node == NULL) {
         fprintf(f, "null");
@@ -509,7 +507,7 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
     }
 
     switch (node->type) {
-        // --- LEAF NODES ---
+        //leaf nodes
         case NODE_LITERAL:
             fprintf(f, "%s", node->data.literal.token.lexeme);
             break;
@@ -518,37 +516,35 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
             fprintf(f, "%s", node->data.identifier.token.lexeme);
             break;
 
-        // --- BINARY OP: (+ 10 5) ---
         case NODE_BINARY_OP:
             fprintf(f, "(%s ", node->data.binaryOp.op.lexeme);
+            
+            fprintf(f, "("); // Wrap Left
             writeNodeSExpr_internal(f, node->data.binaryOp.left);
-            fprintf(f, " ");
+            fprintf(f, ") ("); // Close Left, Wrap Right
             writeNodeSExpr_internal(f, node->data.binaryOp.right);
-            fprintf(f, ")");
+            fprintf(f, "))"); // Close Right, Close Op
             break;
 
-        // --- UNARY OP: (- 5) ---
         case NODE_UNARY_OP:
             fprintf(f, "(%s ", node->data.unaryOp.op.lexeme);
+            
+            fprintf(f, "("); // Wrap Operand
             writeNodeSExpr_internal(f, node->data.unaryOp.right);
-            fprintf(f, ")");
+            fprintf(f, "))"); // Close Operand, Close Op
             break;
 
-        // --- ASSIGNMENT: (ASSIGN x 10) ---
         case NODE_ASSIGN:
-            fprintf(f, "(ASSIGN %s ", node->data.assign.identifier.lexeme);
+            fprintf(f, "(ASSIGN (%s) (", node->data.assign.identifier.lexeme);
             writeNodeSExpr_internal(f, node->data.assign.expression);
-            fprintf(f, ")");
+            fprintf(f, "))");
             break;
 
-        // --- DECLARATION: (DECL (int) (x)) ---
         case NODE_DECLARE_ASSIGN:
-            // UPDATED HERE: Uses "DECL" keyword
             fprintf(f, "(DECL (%s) (%s)", 
                 node->data.declareAssign.type.lexeme,
                 node->data.declareAssign.identifier.lexeme);
             
-            // If initialized (e.g., int x = 5), add value
             if (node->data.declareAssign.expression) {
                 fprintf(f, " ");
                 writeNodeSExpr_internal(f, node->data.declareAssign.expression);
@@ -556,31 +552,29 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
             fprintf(f, ")");
             break;
 
-        // --- IF STATEMENT ---
         case NODE_IF_STMT:
             fprintf(f, "(IF_STMT ");
             writeNodeSExpr_internal(f, node->data.ifStmt.condition);
             fprintf(f, " ");
             
-            // Print the "Then" block
+            //print Then block
             writeNodeSExpr_internal(f, node->data.ifStmt.thenBranch);
             
-            // Check if there is an Else or Else If
+            //check if there is an Else or Else If
             if (node->data.ifStmt.elseBranch) {
-                // Check the TYPE to decide the label
+                // Check type to decide the label
                 if (node->data.ifStmt.elseBranch->type == NODE_IF_STMT) {
-                    fprintf(f, " (ELSEIF "); // It's a nested IF -> "ELSEIF"
+                    fprintf(f, " (ELSEIF "); //If elseif
                 } else {
-                    fprintf(f, " (ELSE ");   // It's a block -> "ELSE"
+                    fprintf(f, " (ELSE ");   //else
                 }
                 
                 writeNodeSExpr_internal(f, node->data.ifStmt.elseBranch);
-                fprintf(f, ")"); // Close the ELSE/ELSEIF tag
+                fprintf(f, ")"); // Close else/elseif tag
             }
             fprintf(f, ")");
             break;
 
-        // --- FOR LOOP ---
         case NODE_FOR_STMT:
             fprintf(f, "(FOR_STMT %s (RANGE", node->data.forStmt.identifier.lexeme);
             for (int i = 0; i < node->data.forStmt.argCount; ++i) {
@@ -592,7 +586,6 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
             fprintf(f, ")");
             break;
 
-        // --- BLOCKS ---
         case NODE_BLOCK:
             fprintf(f, "(BLOCK");
             for (int i = 0; i < node->data.block.count; ++i) {
@@ -602,16 +595,16 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
             fprintf(f, ")");
             break;
 
-        // --- I/O ---
         case NODE_READ_STMT:
-            fprintf(f, "(READ %s)", node->data.readStmt.identifier.lexeme);
+            fprintf(f, "(READ (%s))", node->data.readStmt.identifier.lexeme);
             break;
 
         case NODE_WRITE_STMT:
             fprintf(f, "(WRITE");
             for (int i = 0; i < node->data.writeStmt.argCount; ++i) {
-                fprintf(f, " ");
+                fprintf(f, " ("); // Open wrapper for this argument
                 writeNodeSExpr_internal(f, node->data.writeStmt.expressions[i]);
+                fprintf(f, ")");  // Close wrapper
             }
             fprintf(f, ")");
             break;
