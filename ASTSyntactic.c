@@ -113,6 +113,7 @@ const char* tokenTypeStrings[] = {
 typedef struct {
     Token_Type type;
     char lexeme[MAX_LEXEME_LENGTH];
+    int line_number;  // ADD: line number field
 } Token;
 
 #pragma endregion
@@ -279,7 +280,7 @@ static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
 /* Utility */
 static char* trim(char* s);
 static void ensureTokenCapacity();
-static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz);
+static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz, int* out_line_number);  // ADD: line_number parameter
 #pragma endregion
 
 /* =========================
@@ -354,18 +355,20 @@ Token advance(){
 }
 
 Token expect(Token_Type type){
-    if(type != peek().type){
-        printf("Current Token: %s | Expected Token: %s | Peeked Token: %s\n",
-                tokens[curToken].lexeme, tokenTypeStrings[type], tokenTypeStrings[peek().type]);
-        printf("Other Check: %s\n", tokens[curToken-1].lexeme);
-    } 
+    // if(type != peek().type){
+    //     printf("Current token: %s | Previous token: %s | Expected Token: %s | Peeked Token: %s\n",
+    //             tokens[curToken].lexeme, tokens[curToken-1].lexeme, tokenTypeStrings[type], tokenTypeStrings[peek().type]);
+    // } 
     if(peek().type == type) return advance();
-    const char* errorMsg = "Unexpected Token Type";
+    char* errorMsg = malloc(256);
+    snprintf(errorMsg, 256, "Syntax Error: Expected token type %s, but got %s",
+            tokenTypeStrings[type], tokenTypeStrings[peek().type]);
     // For more complex error handling in the future
     // fprintf(errorMsg, "Expected token type %d, but got unexpected type %d", type, peek().type);
     reportSyntaxError(errorMsg);
+    free((void*)errorMsg);
 
-    return peek(); // Return something, though we are in an error state
+    return peek();
 }
 
 Token_Type revertToTokenType(const char* parsedType){
@@ -389,9 +392,8 @@ bool match(Token_Type type){
 }
 
 void reportSyntaxError(const char* msg) {
-    fprintf(stderr, "SYNTAX ERROR: %s (at token %d: %s)\n", 
-        msg, curToken, peek().lexeme);
-    //exit(1); 
+    fprintf(stderr, "SYNTAX ERROR @ Line %d: %s\n", tokens[curToken].line_number, msg);
+    //exit(1);
 }
 
 void handleDo(){
@@ -447,7 +449,7 @@ AST_Node* parseStatement(){
             // statementNode remains NULL
             break;
         default:
-            reportSyntaxError("Invalid Start of Statement");
+            reportSyntaxError("Invalid Start of Statement (Might be caused by other syntax errors).");
             curToken++; // Try to recover by consuming token
             // statementNode remains NULL
             break;
@@ -528,7 +530,7 @@ AST_Node* parseIf(){
         expect(Token_Delim_Newline);
         
         AST_Node* elseIfThen = parseBlocks();
-        AST_Node* elseIfElse = NULL; // Start of the next chain
+        //AST_Node* elseIfElse = NULL; // Start of the next chain
 
         // Manually build the nested if-statement
         AST_Node* elseIfNode = createIfStmtNode(elseIfCondition, elseIfThen, NULL);
@@ -632,14 +634,19 @@ AST_Node* parseBlocks(){
                 advance();
                 break;
 
-            default:
+            default:{
                 // We hit a token that doesn't start a statement AND doesn't end a block.
                 // This is a syntax error.
-                printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
-                printf("Parsing next token: %s\n", tokens[curToken].lexeme);
-                reportSyntaxError("Unexpected token encountered in block");
+                // printf("Parsed expression: %s\n", tokens[curToken-1].lexeme);
+                // printf("Parsing next token: %s\n", tokens[curToken].lexeme);
+                const char* errorMsg = malloc(256);
+                snprintf((char*)errorMsg, 256, "Unexpected token '%s' encountered in block, expected a statement or block terminator",
+                            tokens[curToken].lexeme);
+                reportSyntaxError(errorMsg);
+                free((void*)errorMsg);
                 curToken++; // Consume to avoid infinite loop
                 return blockNode; // Return what we have
+            }
         }
     }
 }
@@ -1281,9 +1288,10 @@ static void ensureTokenCapacity() {
     }
 }
 
-// Parse a line assumed to contain "LEXEME ... TOKEN_TYPE"
-static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz) {
+// Parse a line assumed to contain "LEXEME ... TOKEN_TYPE ... LINE_NUMBER"
+static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexeme_sz, char* out_type, size_t type_sz, int* out_line_number) {
     if(line == NULL) return false;
+    
     // Make a copy so we can modify
     char buf[1024];
     strncpy(buf, line, sizeof(buf)-1);
@@ -1294,33 +1302,64 @@ static bool parseLineToLexemeAndType (char* line, char* out_lexeme, size_t lexem
     if(*p == '\0') return false;
 
     // Skip lines that are separators or headers
-    if(strstr(p, "LEXEME") || strstr(p, "TOKEN_TYPE") || strstr(p, "----")) return false;
+    if(strstr(p, "LEXEME") || strstr(p, "TOKEN_TYPE") || strstr(p, "LINE_NUMBER") || strstr(p, "----")) return false;
 
-    // Find last whitespace to split type
+    // The format is: LEXEME (20 chars) TOKEN_TYPE (20 chars) LINE_NUMBER (remaining)
+    // We need to parse from right to left to extract line_number, then token_type, then lexeme
+    
     size_t len = strlen(p);
-    // Find the start index of the last word
+    
+    // Find last non-whitespace character
     int i = (int)len - 1;
     while(i >= 0 && isspace((unsigned char)p[i])) i--;
     if(i < 0) return false;
-    int end = i;
-    // Move i back until we hit whitespace or beginning
+    
+    int end_line_num = i;
+    
+    // Move back to find start of line number (all digits)
+    while(i >= 0 && isdigit((unsigned char)p[i])) i--;
+    int start_line_num = i + 1;
+    
+    // Extract line number
+    if(start_line_num > end_line_num) return false;
+    char line_num_str[32];
+    int line_num_len = end_line_num - start_line_num + 1;
+    if(line_num_len <= 0 || line_num_len >= 32) return false;
+    strncpy(line_num_str, p + start_line_num, line_num_len);
+    line_num_str[line_num_len] = '\0';
+    *out_line_number = atoi(line_num_str);
+    
+    // Now find token type (before line number)
+    // Move past whitespace before line number
+    i = start_line_num - 1;
+    while(i >= 0 && isspace((unsigned char)p[i])) i--;
+    if(i < 0) return false;
+    
+    int end_type = i;
+    
+    // Move back to find start of token type (non-whitespace)
     while(i >= 0 && !isspace((unsigned char)p[i])) i--;
     int start_type = i + 1;
-
-    // Extract type
-    int type_len = end - start_type + 1;
+    
+    // Extract token type
+    int type_len = end_type - start_type + 1;
     if(type_len <= 0 || type_len >= (int)type_sz) return false;
     strncpy(out_type, p + start_type, type_len);
     out_type[type_len] = '\0';
-
-    // Lexeme is everything before start_type
+    
+    // Now extract lexeme (everything before token type)
     p[start_type] = '\0';
     char* lex = trim(buf);
     if(lex == NULL || *lex == '\0') return false;
 
-    // Copy lexeme
-    strncpy(out_lexeme, lex, lexeme_sz - 1);
-    out_lexeme[lexeme_sz - 1] = '\0';
+    // Handle special case for newline
+    if(strcmp(lex, "\\n") == 0) {
+        out_lexeme[0] = '\n';
+        out_lexeme[1] = '\0';
+    } else {
+        strncpy(out_lexeme, lex, lexeme_sz - 1);
+        out_lexeme[lexeme_sz - 1] = '\0';
+    }
 
     return true;
 }
@@ -1347,19 +1386,21 @@ void loadTokensFromSymbolTable(const char* filepath) {
 
         char lexeme[MAX_LEXEME_LENGTH];
         char typeStr[128];
+        int line_number = 0;
 
-        if (!parseLineToLexemeAndType(line, lexeme, sizeof(lexeme), typeStr, sizeof(typeStr))) {
-            // If line did not parse into lexeme+type -> skip
+        if (!parseLineToLexemeAndType(line, lexeme, sizeof(lexeme), typeStr, sizeof(typeStr), &line_number)) {
+            // If line did not parse into lexeme+type+line_number -> skip
             continue;
         }
 
         // Convert textual token type to Token_Type enum using your existing function
         Token_Type ttype = revertToTokenType(typeStr);
 
-
         // Add token to global array
         ensureTokenCapacity();
         tokens[token_count].type = ttype;
+        tokens[token_count].line_number = line_number;
+        
         // Copy lexeme safely
         strncpy(tokens[token_count].lexeme, lexeme, MAX_LEXEME_LENGTH - 1);
         tokens[token_count].lexeme[MAX_LEXEME_LENGTH - 1] = '\0';
@@ -1377,6 +1418,7 @@ void loadTokensFromSymbolTable(const char* filepath) {
         ensureTokenCapacity();
         tokens[token_count].type = Token_CodeEnd;
         tokens[token_count].lexeme[0] = '\0';
+        tokens[token_count].line_number = (token_count > 0) ? tokens[token_count-1].line_number : 1;
         token_count++;
     }
 
