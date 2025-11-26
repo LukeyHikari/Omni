@@ -303,7 +303,7 @@ int main() {
 
     // Allocate tokens pointer and load from uploaded symbol table
     tokens = NULL; // Loader will allocate
-    loadTokensFromSymbolTable("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt"); 
+    loadTokensFromSymbolTable("C:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\symbol_table.txt"); 
 
     // Call top-level parser function
     printf("\n--- Parsing Program ---\n");
@@ -324,7 +324,7 @@ int main() {
     printf("---------------------------\n");
 
     // Write AST to JSON file for semantic analyzer
-    writeAST_SExpr("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\ast.json", root);
+    writeAST_SExpr("C:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\ast.json", root);
 
     // Free all allocated memory
     freeAST(root);

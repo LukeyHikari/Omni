@@ -1,708 +1,623 @@
-LEXEME               TOKEN_TYPE          
+LEXEME               TOKEN_TYPE           LINE_NUMBER
 ------------------------------------------------------------
-~/ 
-    This is a mini program to check our mini PL's data types, 
-    arithmetic/boolean operators, constant values, conditional statements, and loops.
-/~ Comment             
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ variable declarations Comment             
-\n                   Delim_Newline       
-bool                 Keyword_Boolean     
-boolBreak            Identifier          
-=                    Assignment_Operator 
-true                 Reserved_True       
-\n                   Delim_Newline       
-char                 Keyword_Char        
-charChoice           Identifier          
-\n                   Delim_Newline       
-decimal              Keyword_Decimal     
-decNum1              Identifier          
-\n                   Delim_Newline       
-decimal              Keyword_Decimal     
-decNum2              Identifier          
-\n                   Delim_Newline       
-decimal              Keyword_Decimal     
-decResult            Identifier          
-\n                   Delim_Newline       
-string               Keyword_String      
-strOperator          Identifier          
-\n                   Delim_Newline       
-int                  Keyword_Int         
-intYear              Identifier          
-\n                   Delim_Newline       
-int                  Keyword_Int         
-intTerms             Identifier          
-\n                   Delim_Newline       
-int                  Keyword_Int         
-int1st               Identifier          
-=                    Assignment_Operator 
-0                    Number              
-\n                   Delim_Newline       
-int                  Keyword_Int         
-int2nd               Identifier          
-=                    Assignment_Operator 
-1                    Number              
-\n                   Delim_Newline       
-int                  Keyword_Int         
-intNext              Identifier          
-\n                   Delim_Newline       
-int                  Keyword_Int         
-i                    Identifier          
-=                    Assignment_Operator 
-0                    Number              
-\n                   Delim_Newline       
-@                    Unknown             
-#                    Unknown             
-$                    Unknown             
-?                    Unknown             
-|                    Unknown             
-;                    Unknown             
-:                    Unknown             
-[                    Unknown             
-]                    Unknown             
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-null                 Reserved_Null       
-\n                   Delim_Newline       
-or                   Boolean_Operator_OR 
-\n                   Delim_Newline       
-intyear              Identifier          
-==                   Boolean_Operator    
-=                    Assignment_Operator 
-2025                 Number              
-\n                   Delim_Newline       
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-\n                   Delim_Newline       
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-\n                   Delim_Newline       
-!                    Boolean_Operator    
-\n                   Delim_Newline       
-{                    Delim_LBRAC         
-}                    Delim_RBRAC         
-\n                   Delim_Newline       
-DIV                  Arithmetic_Operator_DIV
-\n                   Delim_Newline       
-.                    Delim_Period        
-\n                   Delim_Newline       
-^                    Arithmetic_Operator 
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-45.3                 Number              
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Welcome to our Mini Program." String              
-)                    Delim_RPAR          
-~ program start message Comment             
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ main logic without while loop Comment             
-\n                   Delim_Newline       
-do                   Noise_Do            
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"\t1. Arithmetic Calculator \n \t 2. Generation Determiner \n 3. Fibonacci Maker \n 4. Print Constants  
-             \n 5. Exit \n \t What do you want to do?: " String              
-)                    Delim_RPAR          
-~ menu options      Comment             
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-charChoice           Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ input validation  Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-'1'                  Character           
-and                  Boolean_Operator_AND
-charChoice           Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-'2'                  Character           
-and                  Boolean_Operator_AND
-charChoice           Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-'3'                  Character           
-and                  Boolean_Operator_AND
-charChoice           Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-'4'                  Character           
-and                  Boolean_Operator_AND
-charChoice           Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-'5'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Invalid input. Please choose from 1–5 only" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ option 1: Arithmetic Calculator Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-=                    Assignment_Operator 
-'1'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Arithmetic Calculator" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"What operator do you want to use? \n (+, -, *, /, %, ^, DIV): " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-strOperator          Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"+"                  String              
-and                  Boolean_Operator_AND
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"-"                  String              
-and                  Boolean_Operator_AND
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"*"                  String              
-and                  Boolean_Operator_AND
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"/"                  String              
-and                  Boolean_Operator_AND
-\n                   Delim_Newline       
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"%"                  String              
-and                  Boolean_Operator_AND
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"DIV"                String              
-and                  Boolean_Operator_AND
-strOperator          Identifier          
-!=                   Boolean_Operator    
-=                    Assignment_Operator 
-"^"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Invalid input. Please choose valid arithmetic operators only" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else                 Keyword_Else        
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"DIV"                String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Chosen Operator: "  String              
-strOperator          Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Enter number: "     String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-decNum1              Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else                 Keyword_Else        
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Chosen Operator: "  String              
-strOperator          Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Enter first number: " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-decNum1              Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Enter second number: " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-decNum2              Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ arithmetic operations Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"+"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
-+                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"-"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
--                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"*"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
-*                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"/"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
-/                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"%"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
-%                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"DIV"                String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
--                    Arithmetic_Operator 
-decNum2              Identifier          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-strOperator          Identifier          
-=                    Assignment_Operator 
-"^"                  String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-decResult            Identifier          
-=                    Assignment_Operator 
-decNum1              Identifier          
-*                    Arithmetic_Operator 
-decNum1              Identifier          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"The result is: "    String              
-decResult            Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ option 2: Generation Determiner Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-=                    Assignment_Operator 
-'2'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Generation Determiner" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Enter your birth year: " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-intYear              Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-intYear              Identifier          
-<                    Boolean_Operator    
-1900                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You are too old! Not realistic!" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1900                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1927                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to The Greatest Generation" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1928                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1945                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to The Silent Generation" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1946                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1964                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to the Baby Boom Generation" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1965                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1980                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to Generation X" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1981                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1996                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to the Millennial Generation" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-1997                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-2010                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to Generation Z" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->=                   Boolean_Operator    
-=                    Assignment_Operator 
-2010                 Number              
-and                  Boolean_Operator_AND
-intYear              Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-2024                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to Generation Alpha" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
-=                    Assignment_Operator 
-2025                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You belong to Generation Beta" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-else if              Keyword_ElseIf      
-(                    Delim_LPAR          
-intYear              Identifier          
->                    Boolean_Operator    
-2025                 Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"You are not born yet!" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ option 3: Fibonacci Sequence Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-=                    Assignment_Operator 
-'3'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Fibonacci Sequence" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Enter the number of terms: " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-read                 Keyword_Read        
-(                    Delim_LPAR          
-intTerms             Identifier          
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Fibonacci Series: " String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-for                  Keyword_For         
-i                    Identifier          
-in                   Keyword_For_In      
-range                Keyword_For_Range   
-(                    Delim_LPAR          
-i                    Identifier          
-,                    Delim_Comma         
-intTerms             Identifier          
-)                    Delim_RPAR          
-do                   Noise_Do            
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-i                    Identifier          
-<=                   Boolean_Operator    
-=                    Assignment_Operator 
-1                    Number              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-intNext              Identifier          
-=                    Assignment_Operator 
-i                    Identifier          
-\n                   Delim_Newline       
-else                 Keyword_Else        
-\n                   Delim_Newline       
-intNext              Identifier          
-=                    Assignment_Operator 
-int1st               Identifier          
-+                    Arithmetic_Operator 
-int2nd               Identifier          
-\n                   Delim_Newline       
-int1st               Identifier          
-=                    Assignment_Operator 
-int2nd               Identifier          
-\n                   Delim_Newline       
-int2nd               Identifier          
-=                    Assignment_Operator 
-intNext              Identifier          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-intNext              Identifier          
-", "                 String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"\n"                 String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ option 4: Constants Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-=                    Assignment_Operator 
-'4'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"pi = "              String              
-pi                   Builtin_Constant    
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"constant Int = "    String              
-sInInt               Builtin_Constant    
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"constant Decimal = " String              
-sInDec               Builtin_Constant    
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"constant String = " String              
-sInString            Builtin_Constant    
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-~ option 5: Exit    Comment             
-\n                   Delim_Newline       
-if                   Keyword_If          
-(                    Delim_LPAR          
-charChoice           Identifier          
-=                    Assignment_Operator 
-'5'                  Character           
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-boolBreak            Identifier          
-=                    Assignment_Operator 
-false                Reserved_False      
-\n                   Delim_Newline       
-write                Keyword_Write       
-(                    Delim_LPAR          
-"Exiting program... Goodbye!" String              
-)                    Delim_RPAR          
-\n                   Delim_Newline       
-\n                   Delim_Newline       
-until                Identifier          
-boolBreak            Identifier          
-=                    Assignment_Operator 
-false                Reserved_False      
-\n                   Delim_Newline       
-EOF                  CodeEnd             
+~/ Mini program to demonstrate data types, arithmetic & boolean operators, constants, conditionals, and loops in our mini PL. /~ Comment              1                   
+\n                   Delim_Newline        1                   
+\n                   Delim_Newline        2                   
+~/ ================= DECLARATIONS ================= /~ Comment              3                   
+\n                   Delim_Newline        3                   
+int                  Keyword_Int          4                   
+counter              Identifier           4                   
+~ int variable       Comment              4                   
+\n                   Delim_Newline        4                   
+decimal              Keyword_Decimal      5                   
+value                Identifier           5                   
+~ decimal variable   Comment              5                   
+\n                   Delim_Newline        5                   
+string               Keyword_String       6                   
+message              Identifier           6                   
+~ string variable    Comment              6                   
+\n                   Delim_Newline        6                   
+char                 Keyword_Char         7                   
+symbol               Identifier           7                   
+~ char variable      Comment              7                   
+\n                   Delim_Newline        7                   
+bool                 Keyword_Boolean      8                   
+isActive             Identifier           8                   
+~ boolean variable   Comment              8                   
+\n                   Delim_Newline        8                   
+\n                   Delim_Newline        9                   
+int                  Keyword_Int          10                  
+userNum              Identifier           10                  
+\n                   Delim_Newline        10                  
+int                  Keyword_Int          11                  
+anotherNum           Identifier           11                  
+\n                   Delim_Newline        11                  
+\n                   Delim_Newline        12                  
+decimal              Keyword_Decimal      13                  
+circleArea           Identifier           13                  
+\n                   Delim_Newline        13                  
+int                  Keyword_Int          14                  
+sampleInt            Identifier           14                  
+\n                   Delim_Newline        14                  
+decimal              Keyword_Decimal      15                  
+sampleDec            Identifier           15                  
+\n                   Delim_Newline        15                  
+string               Keyword_String       16                  
+sampleStr            Identifier           16                  
+\n                   Delim_Newline        16                  
+\n                   Delim_Newline        17                  
+bool                 Keyword_Boolean      18                  
+systemReady          Identifier           18                  
+\n                   Delim_Newline        18                  
+string               Keyword_String       19                  
+optionalText         Identifier           19                  
+\n                   Delim_Newline        19                  
+\n                   Delim_Newline        20                  
+int                  Keyword_Int          21                  
+range                Keyword_For_Range    21                  
+~ declared “range” instead of “range1” Comment              21                  
+\n                   Delim_Newline        21                  
+int                  Keyword_Int          22                  
+range2               Identifier           22                  
+\n                   Delim_Newline        22                  
+int                  Keyword_Int          23                  
+range3               Identifier           23                  
+\n                   Delim_Newline        23                  
+\n                   Delim_Newline        24                  
+float                Identifier           25                  
+wrongType            Identifier           25                  
+~ float is not a valid data type in this PL Comment              25                  
+\n                   Delim_Newline        25                  
+int                  Keyword_Int          26                  
+counter              Identifier           26                  
+~ duplicate variable name “counter” Comment              26                  
+\n                   Delim_Newline        26                  
+string               Keyword_String       27                  
+message              Identifier           27                  
+=                    Assignment_Operator  27                  
+"Hi"                 String               27                  
+~ initialization not allowed in declaration section Comment              27                  
+\n                   Delim_Newline        27                  
+\n                   Delim_Newline        28                  
+~/ ================= ASSIGNMENTS ================= /~ Comment              29                  
+\n                   Delim_Newline        29                  
+counter              Identifier           30                  
+=                    Assignment_Operator  30                  
+0                    Number               30                  
+\n                   Delim_Newline        30                  
+value                Identifier           31                  
+=                    Assignment_Operator  31                  
+3.5                  Number               31                  
+\n                   Delim_Newline        31                  
+message              Identifier           32                  
+"Hello World"        String               32                  
+~ missing = operator Comment              32                  
+\n                   Delim_Newline        32                  
+symbol               Identifier           33                  
+=                    Assignment_Operator  33                  
+�                    Unknown              33                  
+�                    Unknown              33                  
+�                    Unknown              33                  
+A                    Identifier           33                  
+�                    Unknown              33                  
+�                    Unknown              33                  
+�                    Unknown              33                  
+~ wrong quotation marks for char literal Comment              33                  
+\n                   Delim_Newline        33                  
+isActive             Identifier           34                  
+true                 Reserved_True        34                  
+~ missing = operator Comment              34                  
+\n                   Delim_Newline        34                  
+\n                   Delim_Newline        35                  
+userNum              Identifier           36                  
+=                    Assignment_Operator  36                  
+0                    Number               36                  
+\n                   Delim_Newline        36                  
+anotherNum           Identifier           37                  
+=                    Assignment_Operator  37                  
+4.67                 Number               37                  
+~ assigning decimal to an int variable Comment              37                  
+\n                   Delim_Newline        37                  
+\n                   Delim_Newline        38                  
+range1               Identifier           39                  
+=                    Assignment_Operator  39                  
+2                    Number               39                  
+\n                   Delim_Newline        39                  
+range2               Identifier           40                  
+=                    Assignment_Operator  40                  
+15                   Number               40                  
+\n                   Delim_Newline        40                  
+range3               Identifier           41                  
+=                    Assignment_Operator  41                  
+3                    Number               41                  
+\n                   Delim_Newline        41                  
+\n                   Delim_Newline        42                  
+range1               Identifier           43                  
+=                    Assignment_Operator  43                  
+"three"              String               43                  
+~ assigning a string to an int variable Comment              43                  
+\n                   Delim_Newline        43                  
+value                Identifier           44                  
+=                    Assignment_Operator  44                  
+true                 Reserved_True        44                  
+~ assigning boolean to a decimal variable Comment              44                  
+\n                   Delim_Newline        44                  
+symbol               Identifier           45                  
+=                    Assignment_Operator  45                  
+'AB'                 Character            45                  
+~ char variable has more than one character Comment              45                  
+\n                   Delim_Newline        45                  
+\n                   Delim_Newline        46                  
+~/ ================= CONSTANT VALUES USED ================= /~ Comment              47                  
+\n                   Delim_Newline        47                  
+circleArea           Identifier           48                  
+=                    Assignment_Operator  48                  
+pi                   Builtin_Constant     48                  
+*                    Arithmetic_Operator  48                  
+(                    Delim_LPAR           48                  
+2                    Number               48                  
+^^                   Arithmetic_Operator  48                  
+2                    Number               48                  
+)                    Delim_RPAR           48                  
+~ invalid operator “^^” (should be ^) Comment              48                  
+\n                   Delim_Newline        48                  
+\n                   Delim_Newline        49                  
+sampleInt            Identifier           50                  
+=                    Assignment_Operator  50                  
+sInInt               Builtin_Constant     50                  
+\n                   Delim_Newline        50                  
+sampleDec            Identifier           51                  
+=                    Assignment_Operator  51                  
+sInDec               Builtin_Constant     51                  
+\n                   Delim_Newline        51                  
+sampleStr            Identifier           52                  
+=                    Assignment_Operator  52                  
+sInString            Builtin_Constant     52                  
+\n                   Delim_Newline        52                  
+\n                   Delim_Newline        53                  
+write                Keyword_Write        54                  
+(                    Delim_LPAR           54                  
+"Constant pi value is" String               54                  
+,                    Delim_Comma          54                  
+pi                   Builtin_Constant     54                  
+)                    Delim_RPAR           54                  
+\n                   Delim_Newline        54                  
+write                Keyword_Write        55                  
+(                    Delim_LPAR           55                  
+"Sample integer is"  String               55                  
+,                    Delim_Comma          55                  
+sampleInt            Identifier           55                  
+)                    Delim_RPAR           55                  
+\n                   Delim_Newline        55                  
+write                Keyword_Write        56                  
+(                    Delim_LPAR           56                  
+"Sample decimal is"  String               56                  
+,                    Delim_Comma          56                  
+sampleDec            Identifier           56                  
+)                    Delim_RPAR           56                  
+\n                   Delim_Newline        56                  
+write                Keyword_Write        57                  
+(                    Delim_LPAR           57                  
+"Sample string is"   String               57                  
+,                    Delim_Comma          57                  
+sampleStr            Identifier           57                  
+)                    Delim_RPAR           57                  
+\n                   Delim_Newline        57                  
+\n                   Delim_Newline        58                  
+~/ ================= INPUT AND OUTPUT ================= /~ Comment              59                  
+\n                   Delim_Newline        59                  
+write                Keyword_Write        60                  
+(                    Delim_LPAR           60                  
+"Enter a number"     String               60                  
+)                    Delim_RPAR           60                  
+\n                   Delim_Newline        60                  
+read                 Keyword_Read         61                  
+userNum              Identifier           61                  
+~ missing parentheses for read() Comment              61                  
+\n                   Delim_Newline        61                  
+\n                   Delim_Newline        62                  
+decimal              Keyword_Decimal      63                  
+result               Identifier           63                  
+\n                   Delim_Newline        63                  
+result               Identifier           64                  
+=                    Assignment_Operator  64                  
+(                    Delim_LPAR           64                  
+(                    Delim_LPAR           64                  
+userNum              Identifier           64                  
++                    Arithmetic_Operator  64                  
+value                Identifier           64                  
+)                    Delim_RPAR           64                  
+-                    Arithmetic_Operator  64                  
+1                    Number               64                  
+)                    Delim_RPAR           64                  
+*                    Arithmetic_Operator  64                  
+2                    Number               64                  
+/                    Arithmetic_Operator  64                  
+0                    Number               64                  
+~ division by zero   Comment              64                  
+\n                   Delim_Newline        64                  
+\n                   Delim_Newline        65                  
+int                  Keyword_Int          66                  
+remainder            Identifier           66                  
+\n                   Delim_Newline        66                  
+remainder            Identifier           67                  
+=                    Assignment_Operator  67                  
+userNum              Identifier           67                  
+%                    Arithmetic_Operator  67                  
+�                    Unknown              67                  
+�                    Unknown              67                  
+�                    Unknown              67                  
+anotherNum           Identifier           67                  
+�                    Unknown              67                  
+�                    Unknown              67                  
+�                    Unknown              67                  
+~ variable name inside quotes Comment              67                  
+\n                   Delim_Newline        67                  
+\n                   Delim_Newline        68                  
+int                  Keyword_Int          69                  
+wholeDiv             Identifier           69                  
+\n                   Delim_Newline        69                  
+wholeDiv             Identifier           70                  
+=                    Assignment_Operator  70                  
+userNum              Identifier           70                  
+DIV                  Arithmetic_Operator_DIV 70                  
+anotherNum           Identifier           70                  
+\n                   Delim_Newline        70                  
+\n                   Delim_Newline        71                  
+decimal              Keyword_Decimal      72                  
+power                Identifier           72                  
+\n                   Delim_Newline        72                  
+power                Identifier           73                  
+=                    Assignment_Operator  73                  
+2                    Number               73                  
+^                    Arithmetic_Operator  73                  
+three                Identifier           73                  
+~ “three” is undeclared Comment              73                  
+\n                   Delim_Newline        73                  
+\n                   Delim_Newline        74                  
+write                Keyword_Write        75                  
+(                    Delim_LPAR           75                  
+"Result: "           String               75                  
+,                    Delim_Comma          75                  
+result               Identifier           75                  
+)                    Delim_RPAR           75                  
+\n                   Delim_Newline        75                  
+write                Keyword_Write        76                  
+(                    Delim_LPAR           76                  
+"Modulus: "          String               76                  
+,                    Delim_Comma          76                  
+remainder            Identifier           76                  
+)                    Delim_RPAR           76                  
+\n                   Delim_Newline        76                  
+write                Keyword_Write        77                  
+(                    Delim_LPAR           77                  
+"Integer Division: " String               77                  
+,                    Delim_Comma          77                  
+wholeDiv             Identifier           77                  
+)                    Delim_RPAR           77                  
+\n                   Delim_Newline        77                  
+write                Keyword_Write        78                  
+(                    Delim_LPAR           78                  
+"Exponentiation: "   String               78                  
+,                    Delim_Comma          78                  
+power                Identifier           78                  
+)                    Delim_RPAR           78                  
+\n                   Delim_Newline        78                  
+\n                   Delim_Newline        79                  
+~/ ================= CONDITIONAL STATEMENTS ================= /~ Comment              80                  
+\n                   Delim_Newline        80                  
+if                   Keyword_If           81                  
+(                    Delim_LPAR           81                  
+result               Identifier           81                  
+<                    Boolean_Operator     81                  
+10                   Number               81                  
+)                    Delim_RPAR           81                  
+do                   Noise_Do             81                  
+\n                   Delim_Newline        81                  
+write                Keyword_Write        82                  
+(                    Delim_LPAR           82                  
+"Result is less than 10" String               82                  
+)                    Delim_RPAR           82                  
+\n                   Delim_Newline        82                  
+else if              Keyword_ElseIf       83                  
+(                    Delim_LPAR           83                  
+result               Identifier           83                  
+>                    Boolean_Operator     83                  
+10                   Number               83                  
+)                    Delim_RPAR           83                  
+do                   Noise_Do             83                  
+\n                   Delim_Newline        83                  
+write                Keyword_Write        84                  
+(                    Delim_LPAR           84                  
+"Result is greater than 10" String               84                  
+)                    Delim_RPAR           84                  
+\n                   Delim_Newline        84                  
+else                 Keyword_Else         85                  
+do                   Noise_Do             85                  
+\n                   Delim_Newline        85                  
+write                Keyword_Write        86                  
+(                    Delim_LPAR           86                  
+�                    Unknown              86                  
+�                    Unknown              86                  
+�                    Unknown              86                  
+Result               Identifier           86                  
+is                   Identifier           86                  
+equal                Identifier           86                  
+to                   Identifier           86                  
+10                   Number               86                  
+�                    Unknown              86                  
+�                    Unknown              86                  
+�                    Unknown              86                  
+)                    Delim_RPAR           86                  
+~ wrong quotation marks Comment              86                  
+\n                   Delim_Newline        86                  
+\n                   Delim_Newline        87                  
+if                   Keyword_If           88                  
+(                    Delim_LPAR           88                  
+(                    Delim_LPAR           88                  
+userNum              Identifier           88                  
+>                    Boolean_Operator     88                  
+0                    Number               88                  
+and                  Boolean_Operator_AND 88                  
+isActive             Identifier           88                  
+==                   Boolean_Operator     88                  
+true                 Reserved_True        88                  
+)                    Delim_RPAR           88                  
+or                   Boolean_Operator_OR  88                  
+(                    Delim_LPAR           88                  
+result               Identifier           88                  
+!=                   Boolean_Operator     88                  
+0                    Number               88                  
+)                    Delim_RPAR           88                  
+)                    Delim_RPAR           88                  
+do                   Noise_Do             88                  
+\n                   Delim_Newline        88                  
+write                Keyword_Write        89                  
+(                    Delim_LPAR           89                  
+"Complex condition evaluated to true" String               89                  
+)                    Delim_RPAR           89                  
+\n                   Delim_Newline        89                  
+\n                   Delim_Newline        90                  
+if                   Keyword_If           91                  
+(                    Delim_LPAR           91                  
+!                    Boolean_Operator     91                  
+(                    Delim_LPAR           91                  
+result               Identifier           91                  
+>                    Boolean_Operator     91                  
+20                   Number               91                  
+)                    Delim_RPAR           91                  
+)                    Delim_RPAR           91                  
+do                   Noise_Do             91                  
+\n                   Delim_Newline        91                  
+write                Keyword_Write        92                  
+(                    Delim_LPAR           92                  
+"Result is NOT greater than 20" String               92                  
+)                    Delim_RPAR           92                  
+\n                   Delim_Newline        92                  
+\n                   Delim_Newline        93                  
+if                   Keyword_If           94                  
+(                    Delim_LPAR           94                  
+result               Identifier           94                  
+=                    Assignment_Operator  94                  
+5                    Number               94                  
+)                    Delim_RPAR           94                  
+do                   Noise_Do             94                  
+~ using = instead of == in condition Comment              94                  
+\n                   Delim_Newline        94                  
+write                Keyword_Write        95                  
+(                    Delim_LPAR           95                  
+"Result is 5"        String               95                  
+)                    Delim_RPAR           95                  
+\n                   Delim_Newline        95                  
+\n                   Delim_Newline        96                  
+~/ ================= RESERVED WORDS ================= /~ Comment              97                  
+\n                   Delim_Newline        97                  
+systemReady          Identifier           98                  
+=                    Assignment_Operator  98                  
+falSE                Identifier           98                  
+~ invalid boolean literal formatting Comment              98                  
+\n                   Delim_Newline        98                  
+optionalText         Identifier           99                  
+=                    Assignment_Operator  99                  
+null                 Reserved_Null        99                  
+\n                   Delim_Newline        99                  
+\n                   Delim_Newline        100                 
+if                   Keyword_If           101                 
+(                    Delim_LPAR           101                 
+systemReady          Identifier           101                 
+=                    Assignment_Operator  101                 
+false                Reserved_False       101                 
+)                    Delim_RPAR           101                 
+do                   Noise_Do             101                 
+~ using = instead of == in condition Comment              101                 
+\n                   Delim_Newline        101                 
+write                Keyword_Write        102                 
+(                    Delim_LPAR           102                 
+"System is not ready" String               102                 
+)                    Delim_RPAR           102                 
+\n                   Delim_Newline        102                 
+\n                   Delim_Newline        103                 
+WORD                 Identifier           104                 
+=                    Assignment_Operator  104                 
+10                   Number               104                 
+~ using reserved word as a variable Comment              104                 
+\n                   Delim_Newline        104                 
+FUNCTION             Identifier           105                 
+=                    Assignment_Operator  105                 
+20                   Number               105                 
+~ assigning to a reserved word Comment              105                 
+\n                   Delim_Newline        105                 
+\n                   Delim_Newline        106                 
+~/ ================= FOR LOOPS ================= /~ Comment              107                 
+\n                   Delim_Newline        107                 
+for                  Keyword_For          108                 
+i                    Identifier           108                 
+in                   Keyword_For_In       108                 
+range                Keyword_For_Range    108                 
+(                    Delim_LPAR           108                 
+range1               Identifier           108                 
+)                    Delim_RPAR           108                 
+do                   Noise_Do             108                 
+\n                   Delim_Newline        108                 
+write                Keyword_Write        109                 
+(                    Delim_LPAR           109                 
+�                    Unknown              109                 
+�                    Unknown              109                 
+�                    Unknown              109                 
+Single               Identifier           109                 
+Range                Identifier           109                 
+�                    Unknown              109                 
+�                    Unknown              109                 
+�                    Unknown              109                 
+)                    Delim_RPAR           109                 
+~ wrong quotes       Comment              109                 
+\n                   Delim_Newline        109                 
+\n                   Delim_Newline        110                 
+For                  Identifier           111                 
+i                    Identifier           111                 
+in                   Keyword_For_In       111                 
+range                Keyword_For_Range    111                 
+(                    Delim_LPAR           111                 
+range1               Identifier           111                 
+,                    Delim_Comma          111                 
+range2               Identifier           111                 
+,                    Delim_Comma          111                 
+0                    Number               111                 
+)                    Delim_RPAR           111                 
+do                   Noise_Do             111                 
+~ infinite loop due to step=0 Comment              111                 
+\n                   Delim_Newline        111                 
+write                Keyword_Write        112                 
+(                    Delim_LPAR           112                 
+�                    Unknown              112                 
+�                    Unknown              112                 
+�                    Unknown              112                 
+INFINITE             Identifier           112                 
+LOOP                 Identifier           112                 
+!!                   Boolean_Operator     112                 
+!                    Boolean_Operator     112                 
+�                    Unknown              112                 
+�                    Unknown              112                 
+�                    Unknown              112                 
+)                    Delim_RPAR           112                 
+~ wrong quotes       Comment              112                 
+\n                   Delim_Newline        112                 
+\n                   Delim_Newline        113                 
+for                  Keyword_For          114                 
+i                    Identifier           114                 
+in                   Keyword_For_In       114                 
+range                Keyword_For_Range    114                 
+(                    Delim_LPAR           114                 
+range1               Identifier           114                 
+,                    Delim_Comma          114                 
+range2               Identifier           114                 
+)                    Delim_RPAR           114                 
+do                   Noise_Do             114                 
+\n                   Delim_Newline        114                 
+write                Keyword_Write        115                 
+(                    Delim_LPAR           115                 
+"Outer loop i"       String               115                 
+,                    Delim_Comma          115                 
+i                    Identifier           115                 
+)                    Delim_RPAR           115                 
+\n                   Delim_Newline        115                 
+for                  Keyword_For          116                 
+j                    Identifier           116                 
+in                   Keyword_For_In       116                 
+range                Keyword_For_Range    116                 
+(                    Delim_LPAR           116                 
+range1               Identifier           116                 
+,                    Delim_Comma          116                 
+range2               Identifier           116                 
+,                    Delim_Comma          116                 
+range3               Identifier           116                 
+)                    Delim_RPAR           116                 
+do                   Noise_Do             116                 
+\n                   Delim_Newline        116                 
+write                Keyword_Write        117                 
+(                    Delim_LPAR           117                 
+"Inner loop j"       String               117                 
+,                    Delim_Comma          117                 
+j                    Identifier           117                 
+)                    Delim_RPAR           117                 
+\n                   Delim_Newline        117                 
+\n                   Delim_Newline        118                 
+for                  Keyword_For          119                 
+k                    Identifier           119                 
+in                   Keyword_For_In       119                 
+range                Keyword_For_Range    119                 
+(                    Delim_LPAR           119                 
+"start"              String               119                 
+,                    Delim_Comma          119                 
+"end"                String               119                 
+)                    Delim_RPAR           119                 
+do                   Noise_Do             119                 
+~ using strings for numeric loop range Comment              119                 
+\n                   Delim_Newline        119                 
+write                Keyword_Write        120                 
+(                    Delim_LPAR           120                 
+"Loop error"         String               120                 
+)                    Delim_RPAR           120                 
+\n                   Delim_Newline        120                 
+\n                   Delim_Newline        121                 
+i                    Identifier           122                 
+=                    Assignment_Operator  122                 
+i                    Identifier           122                 
++                    Arithmetic_Operator  122                 
+1                    Number               122                 
+~ modifying loop variable manually Comment              122                 
+\n                   Delim_Newline        122                 
+\n                   Delim_Newline        123                 
+~/ ================= CHARACTER CHECK ================= /~ Comment              124                 
+\n                   Delim_Newline        124                 
+if                   Keyword_If           125                 
+(                    Delim_LPAR           125                 
+symbol               Identifier           125                 
+!=                   Boolean_Operator     125                 
+'Z'                  Character            125                 
+)                    Delim_RPAR           125                 
+do                   Noise_Do             125                 
+\n                   Delim_Newline        125                 
+write                Keyword_Write        126                 
+(                    Delim_LPAR           126                 
+�                    Unknown              126                 
+�                    Unknown              126                 
+�                    Unknown              126                 
+Symbol               Identifier           126                 
+is                   Identifier           126                 
+not                  Identifier           126                 
+Z                    Identifier           126                 
+�                    Unknown              126                 
+�                    Unknown              126                 
+�                    Unknown              126                 
+)                    Delim_RPAR           126                 
+~ wrong quotes for string literal Comment              126                 
+\n                   Delim_Newline        126                 
+\n                   Delim_Newline        127                 
+if                   Keyword_If           128                 
+(                    Delim_LPAR           128                 
+symbol               Identifier           128                 
+===                  Boolean_Operator     128                 
+'A'                  Character            128                 
+)                    Delim_RPAR           128                 
+do                   Noise_Do             128                 
+~ invalid operator “===” Comment              128                 
+\n                   Delim_Newline        128                 
+write                Keyword_Write        129                 
+(                    Delim_LPAR           129                 
+"Triple equals test" String               129                 
+)                    Delim_RPAR           129                 
+\n                   Delim_Newline        129                 
+\n                   Delim_Newline        130                 
+~/ ================= END ================= /~ Comment              131                 
+\n                   Delim_Newline        131                 
+read                 Keyword_Read         132                 
+(                    Delim_LPAR           132                 
+"Program Finished"   String               132                 
+)                    Delim_RPAR           132                 
+~ should be write(), not read() Comment              132                 
+\n                   Delim_Newline        132                 
+\n                   Delim_Newline        133                 
+\n                   Delim_Newline        134                 
+\n                   Delim_Newline        135                 
+EOF                  CodeEnd              136                 
