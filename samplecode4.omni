@@ -1,14 +1,19 @@
-~/ Corrected Mini PL Program with no syntax errors /~
+~/ Corrected Mini PL Program /~
 
 ~/ ================= DECLARATIONS ================= /~
-int a, b, c
+int a
+int b
+int c
 int x = 10
 int y = 20
-float z = 5.0
+decimal z = 5.0
 char letter = 'a'
 bool flag = true
 int valid = 1
 int result = 0
+int total
+int value
+int num
 
 ~/ ================= ASSIGNMENTS ================= /~
 total = 5 + 6 - 7
