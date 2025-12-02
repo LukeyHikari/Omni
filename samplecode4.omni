@@ -1,0 +1,25 @@
+~/ Corrected Mini PL Program with no syntax errors /~
+
+~/ ================= DECLARATIONS ================= /~
+int a, b, c
+int x = 10
+int y = 20
+float z = 5.0
+char letter = 'a'
+bool flag = true
+int valid = 1
+int result = 0
+
+~/ ================= ASSIGNMENTS ================= /~
+total = 5 + 6 - 7
+value = a + b
+num = 1 + 2 + 3
+result = 10 / 5
+x = 5
+
+~/ ================= FUNCTIONS ================= /~
+read(x)
+write(x)
+write("This is a valid string")
+write(total)
+read(valid)
