@@ -178,7 +178,7 @@ int main(){
     //     return EXIT_FAILURE;
     // }
 
-    const char* filename = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\samplecode.omni";//argv[1];
+    const char* filename = "C:\\Users\\jeimv\\OneDrive\\Documents\\VSCODE FILES\\Lexical Analyzer\\Omni\\samplecode3.omni";//argv[1];
     FILE* src = openOmniFile(filename);  //Handles both checking + opening of the file
     printf("Processing file: %s\n\n", filename);
 

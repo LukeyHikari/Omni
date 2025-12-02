@@ -1,0 +1,50 @@
+~/ Mini program to demonstrate data types, arithmetic & boolean operators, constants, conditionals, and loops in our mini PL. /~
+
+~/ ================= DECLARATIONS ================= /~
+int a, b, , c;
+int x = 10, int y = 20;
+float z = = 5.0;
+char letter = 'a' 'b';
+bool flag = true false;
+int valid = 1, invalid = ;
+
+~/ ================= ASSIGNMENTS ================= /~
+total = 5 + + 6 - - 7;
+value = a + b * * c;
+calc = ((a + b) * (c - d;
+num   =   1   +   2   ;   +   3
+result = 10 / + 5;
+x = 5 ( 6 + 7 );
+
+~/ ================= Nested Function ================= /~
+write(read(write(x)));
+read( , var);
+Write("This string never ends...);
+write("Var: " + var " Next: " + next);
+scan("input");
+print(var1, , var2);
+call(func(a, b), c, );
+
+~/ ================= Keyword ================= /~
+int int = 5;
+if (if == then) { else = 1; }
+while (true) { int x }
+return return;
+void main(int void) { }
+class class { }
+
+~/ ================= Whitespace ================= /~
+int 
+    variable 
+        = 
+            100;
+            
+write   (   
+    a   ,   
+    b   
+)   ;
+
+x = 1 /* comment inside expression */ + 2;
+y = 10 // comment ending line with no semicolon
+z = 20
+
