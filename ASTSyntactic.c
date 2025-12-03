@@ -490,7 +490,7 @@ AST_Node* parseDeclareAssign(){
     }
     
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
 
     return createDeclareAssignNode(typeToken, identifier, expression);
 }
@@ -501,7 +501,7 @@ AST_Node* parseAssign(){
     AST_Node* expression = parseExpression();
     
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
 
     return createAssignNode(identifier, expression);
 }
@@ -518,7 +518,7 @@ AST_Node* parseIf(){
 
     AST_Node* thenBranch = parseBlocks();
     expect(Token_Delim_RBRAC);
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
 
     AST_Node* elseBranch = NULL;
 
@@ -536,7 +536,7 @@ AST_Node* parseIf(){
         
         AST_Node* elseIfThen = parseBlocks();
         expect(Token_Delim_RBRAC);
-        expect(Token_Delim_Newline);
+        if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
         //AST_Node* elseIfElse = NULL; // Start of the next chain
 
         // Manually build the nested if-statement
@@ -556,7 +556,7 @@ AST_Node* parseIf(){
             expect(Token_Delim_Newline);
             AST_Node* nextThen = parseBlocks();
             expect(Token_Delim_RBRAC);
-            expect(Token_Delim_Newline);
+            if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
             
             AST_Node* nextIfNode = createIfStmtNode(nextCond, nextThen, NULL);
             current->data.ifStmt.elseBranch = nextIfNode;
@@ -585,7 +585,7 @@ AST_Node* parseElse(){
     expect(Token_Delim_Newline);
     AST_Node* elseBlock = parseBlocks();
     expect(Token_Delim_RBRAC);
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
     return elseBlock;
 }
 
@@ -620,7 +620,7 @@ AST_Node* parseIterative(){
     // Now parse the body and attach it
     forNode->data.forStmt.body = parseBlocks();
     expect(Token_Delim_RBRAC);
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
     
     return forNode;
 }
@@ -670,7 +670,7 @@ AST_Node* parseRead(){
     Token identifier = expect(Token_Identifier);
     expect(Token_Delim_RPAR);
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
     
     return createReadStmtNode(identifier);
 }
@@ -690,8 +690,7 @@ AST_Node* parseWrite(){
     
     expect(Token_Delim_RPAR);
     handleComments();
-    if(peek().type != Token_CodeEnd)
-        expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
         
     return writeNode;
 }
