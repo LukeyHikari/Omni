@@ -1,0 +1,30 @@
+~/ Corrected Mini PL Program /~
+
+~/ ================= DECLARATIONS ================= /~
+int a
+int b
+int c
+int x = 10
+int y = 20
+decimal z = 5.0
+char letter = 'a'
+bool flag = true
+int valid = 1
+int result = 0
+int total
+int value
+int num
+
+~/ ================= ASSIGNMENTS ================= /~
+total = 5 + 6 - 7
+value = a + b
+num = 1 + 2 + 3
+result = 10 / 5
+x = 5
+
+~/ ================= FUNCTIONS ================= /~
+read(x)
+write(x)
+write("This is a valid string")
+write(total)
+read(valid)

@@ -1,0 +1,8 @@
+int x
+decimal y
+string name
+
+int x = 5
+decimal y = 4.567
+string name = "Omni"
+z = ( x + y * 2 ) / 3

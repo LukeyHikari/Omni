@@ -1,0 +1,47 @@
+~/ BOOLEAN EXPRESSIONS HEIRARCHY CHECK /~
+
+~/ ================= DECLARATIONS ================= /~
+bool res_and_or
+bool res_eq_and
+bool res_rel_eq
+bool res_complex
+int a = 5
+int b = 10
+int c = 20
+
+~/ ================= TEST CASES ================= /~
+
+~/ TEST 1: Level 3 (AND) vs Level 4 (OR) /~
+~/ Hierarchy Rule: AND binds tighter than OR /~
+~/ Expression: true or false and false /~
+~/ Expected Parsing: true or (false and false) -> true or false -> TRUE /~
+~/ If Wrong (Left-to-Right): (true or false) and false -> true and false -> FALSE /~
+res_and_or = true or false and false
+
+~/ TEST 2: Level 2 (Equality) vs Level 3 (AND) /~
+~/ Hierarchy Rule: == binds tighter than AND /~
+~/ Expression: false and true == false /~
+~/ Expected Parsing: false and (true == false) -> false and false -> FALSE /~
+~/ If Wrong (Left-to-Right): (false and true) == false -> false == false -> TRUE /~
+res_eq_and = false and true == false
+
+~/ TEST 3: Level 1 (Relational) vs Level 2 (Equality) /~
+~/ Hierarchy Rule: < binds tighter than == /~
+~/ Expression: 5 < 10 == true /~
+~/ Expected Parsing: (5 < 10) == true -> true == true -> TRUE /~
+~/ If Wrong (Right-to-Left or Equal): 5 < (10 == true) -> Type Error or Unexpected Behavior /~
+res_rel_eq = a < b == true
+
+~/ TEST 4: Full Hierarchy Mix /~
+~/ Expression: 5 < 10 or 20 >= 20 and 5 != 10 /~
+~/ Step 1 (Level 1 Relational): (true) or (true) and (true) /~
+~/ Step 2 (Level 2 Equality):   (true) or (true) and (true)  (Already done via !=) /~
+~/ Step 3 (Level 3 AND):        true or (true and true) /~
+~/ Step 4 (Level 4 OR):         true or true -> TRUE /~
+res_complex = a < b or c >= c and a != b
+
+~/ ================= OUTPUT ================= /~
+write(res_and_or)
+write(res_eq_and)
+write(res_rel_eq)
+write(res_complex)
