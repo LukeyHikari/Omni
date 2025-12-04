@@ -490,7 +490,7 @@ AST_Node* parseDeclareAssign(){
     }
     
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
 
     return createDeclareAssignNode(typeToken, identifier, expression);
 }
@@ -501,7 +501,7 @@ AST_Node* parseAssign(){
     AST_Node* expression = parseExpression();
     
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
 
     return createAssignNode(identifier, expression);
 }
@@ -512,10 +512,14 @@ AST_Node* parseIf(){
     AST_Node* condition = parseExpression();
     expect(Token_Delim_RPAR);
     handleDo();
+    expect(Token_Delim_LBRAC);
     handleComments();
     expect(Token_Delim_Newline);
 
     AST_Node* thenBranch = parseBlocks();
+    expect(Token_Delim_RBRAC);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
+
     AST_Node* elseBranch = NULL;
 
     if (match(Token_Keyword_ElseIf)) {
@@ -526,10 +530,13 @@ AST_Node* parseIf(){
         AST_Node* elseIfCondition = parseExpression();
         expect(Token_Delim_RPAR);
         handleDo();
+        expect(Token_Delim_LBRAC);
         handleComments();
         expect(Token_Delim_Newline);
         
         AST_Node* elseIfThen = parseBlocks();
+        expect(Token_Delim_RBRAC);
+        if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
         //AST_Node* elseIfElse = NULL; // Start of the next chain
 
         // Manually build the nested if-statement
@@ -544,9 +551,12 @@ AST_Node* parseIf(){
             AST_Node* nextCond = parseExpression();
             expect(Token_Delim_RPAR);
             handleDo();
+            expect(Token_Delim_LBRAC);
             handleComments();
             expect(Token_Delim_Newline);
             AST_Node* nextThen = parseBlocks();
+            expect(Token_Delim_RBRAC);
+            if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
             
             AST_Node* nextIfNode = createIfStmtNode(nextCond, nextThen, NULL);
             current->data.ifStmt.elseBranch = nextIfNode;
@@ -558,7 +568,8 @@ AST_Node* parseIf(){
             current->data.ifStmt.elseBranch = parseElse();
         }
 
-    } else if (match(Token_Keyword_Else)) {
+    }
+    else if (match(Token_Keyword_Else)) {
         elseBranch = parseElse();
     }
     
@@ -566,14 +577,16 @@ AST_Node* parseIf(){
     return createIfStmtNode(condition, thenBranch, elseBranch);
 }
 
-// parseElseIf is no longer needed; logic is in parseIf
-
 AST_Node* parseElse(){
     // 'Else' token was already consumed by match() in parseIf
     handleDo();
+    expect(Token_Delim_LBRAC);
     handleComments();
     expect(Token_Delim_Newline);
-    return parseBlocks();
+    AST_Node* elseBlock = parseBlocks();
+    expect(Token_Delim_RBRAC);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
+    return elseBlock;
 }
 
 AST_Node* parseIterative(){
@@ -599,13 +612,15 @@ AST_Node* parseIterative(){
     }
     
     expect(Token_Delim_RPAR);
-
     handleDo();
+    expect(Token_Delim_LBRAC);
     handleComments();
     expect(Token_Delim_Newline);
     
     // Now parse the body and attach it
     forNode->data.forStmt.body = parseBlocks();
+    expect(Token_Delim_RBRAC);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
     
     return forNode;
 }
@@ -626,14 +641,12 @@ AST_Node* parseBlocks(){
             // Tokens that *end* a block
             case Token_Keyword_ElseIf: 
             case Token_Keyword_Else:
-            case Token_Delim_Newline: // This assumes blocks end at the next "level"
+            case Token_Delim_RBRAC:
             case Token_CodeEnd: // End of file
                 return blockNode;
-
-            case Token_Comment: // Skip comments inside blocks
+            case Token_Delim_Newline: case Token_Comment:
                 advance();
                 break;
-
             default:{
                 // We hit a token that doesn't start a statement AND doesn't end a block.
                 // This is a syntax error.
@@ -657,7 +670,7 @@ AST_Node* parseRead(){
     Token identifier = expect(Token_Identifier);
     expect(Token_Delim_RPAR);
     handleComments();
-    expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
     
     return createReadStmtNode(identifier);
 }
@@ -677,8 +690,7 @@ AST_Node* parseWrite(){
     
     expect(Token_Delim_RPAR);
     handleComments();
-    if(peek().type != Token_CodeEnd)
-        expect(Token_Delim_Newline);
+    if(peek().type != Token_CodeEnd) expect(Token_Delim_Newline);
         
     return writeNode;
 }
