@@ -296,14 +296,24 @@ int token_capacity = 0;
    int main
    ========================= */
 
-int main() {
+int main(int argc, char *argv[]){
+    // Expect filename argument; terminal usage: ./*parser_filename* <symbol_table.txt>
+    if (argc < 2) {
+        printf("Usage: %s <file.omni>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
     // Early debug to confirm program start
     printf("PROGRAM START\n");
     fflush(stdout);
 
     // Allocate tokens pointer and load from uploaded symbol table
     tokens = NULL; // Loader will allocate
-    loadTokensFromSymbolTable("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt"); 
+
+    // For testing purposes, hardcode symbol table path here
+    //const char* symbolTablePath = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt";
+    const char* symbolTablePath = argv[1];
+    loadTokensFromSymbolTable(symbolTablePath); 
 
     // Call top-level parser function
     printf("\n--- Parsing Program ---\n");
@@ -361,7 +371,7 @@ Token expect(Token_Type type){
     // } 
     if(peek().type == type) return advance();
     char* errorMsg = malloc(256);
-    snprintf(errorMsg, 256, "Syntax Error: Expected token type %s, but got %s",
+    snprintf(errorMsg, 256, "Expected token type %s, but got %s",
             tokenTypeStrings[type], tokenTypeStrings[peek().type]);
     // For more complex error handling in the future
     // fprintf(errorMsg, "Expected token type %d, but got unexpected type %d", type, peek().type);
@@ -410,7 +420,6 @@ void handleComments(){
 #pragma endregion
 
 #pragma region Parser Functions
-
 AST_Node* parse() {
     AST_Node* programBody = createBlockNode();
     while (!atEnd()) {
@@ -848,7 +857,6 @@ AST_Node* createNode(NodeType type) {
 }
 
 //specific nodes
-
 AST_Node* createLiteralNode(Token token) {
     AST_Node* node = createNode(NODE_LITERAL);
     node->data.literal.token = token;
@@ -983,7 +991,6 @@ void addStatementToBlock(AST_Node* blockNode, AST_Node* statement) {
     }
     data->statements[data->count++] = statement;
 }
-
 #pragma endregion
 
 #pragma region AST Terminal Printing Function
@@ -1123,9 +1130,6 @@ void freeAST(AST_Node* node) {
 #pragma endregion
 
 #pragma region JSON Printing Function
-
-static void writeNodeSExpr_internal(FILE* f, AST_Node* node);
-
 static void writeNodeSExpr_internal(FILE* f, AST_Node* node) {
     if (node == NULL) {
         fprintf(f, "null");

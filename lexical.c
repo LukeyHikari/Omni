@@ -6,6 +6,7 @@
 
 #define MAX_LEXEME_LENGTH 256
 #define KEYWORD_COUNT (sizeof(keywords) / sizeof(keywords[0]))
+#define KEYWORD_BUCKETS 128
 
 // Token Type Enumeration
 typedef enum {
@@ -66,6 +67,13 @@ typedef struct{
     char* word;
     Token_Type type;
 } Keyword;
+
+// Hashmap node for keywords
+typedef struct KeywordNode {
+    const char* word;
+    Token_Type type;
+    struct KeywordNode* next;
+} KeywordNode;
 
 // Lookup Table for keywords
 Keyword keywords[] = {
@@ -160,6 +168,9 @@ const char* tokenTypeStrings[] = {
 // Function Prototypes
 Token getNextToken(FILE* srcFile);
 Token_Type getlexemeType(const char* lexeme);
+static inline unsigned keywordHash(const char* s);
+void initKeywordTable(void);
+Token_Type lookupKeyword(const char* lexeme);
 const char* outputToken(Token token);
 static bool hasOmniExtension (const char* filename);
 static FILE* openOmniFile (const char* filename);
@@ -170,15 +181,25 @@ int line_number = 1; // Global line number tracker
 // Helper: advance line counter when a physical newline is consumed
 static inline void consume_newline() { line_number++; }
 
-//int main(int argc, char *argv[])
-int main(){
-    // Expect filename argument; terminal usage: ./lexical_analyzer <file.omni>
-    // if (argc < 2) {
-    //     printf("Usage: %s <file.omni>\n", argv[0]);
-    //     return EXIT_FAILURE;
-    // }
+// Keyword hash table (chained) and storage
+static KeywordNode* keywordBuckets[KEYWORD_BUCKETS] = {0};
+static KeywordNode keywordNodes[KEYWORD_COUNT]; // fixed pool
 
-    const char* filename = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\samplecode.omni";//argv[1];
+int main(int argc, char *argv[]){
+    // Expect filename argument; terminal usage: ./*lexer_filename* <file.omni>
+    if (argc < 2) {
+        printf("Usage: %s <file.omni>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    // Create the keyword hash map
+    initKeywordTable();
+
+    // For testing purposes, hardcode filename here
+    //const char* filename = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\complexCode.omni";
+    
+    const char* filename = argv[1];
+
     FILE* src = openOmniFile(filename);  //Handles both checking + opening of the file
     printf("Processing file: %s\n\n", filename);
 
@@ -299,29 +320,38 @@ Token getNextToken(FILE* srcFile){
         case STATE_IN_IDENTIFIER:
             if (isalnum(ch) || ch == '_') {
                 token.lexeme[lexemeIndex++] = ch;
-            } else {
+            }
+            else {
                 ungetc(ch, srcFile);
                 token.lexeme[lexemeIndex] = '\0';
                 token.type = getlexemeType(token.lexeme);
 
-                // Handle "else if"
+                // Else state; checks for else if
                 if (token.type == Token_Keyword_Else) {
                     int next = fgetc(srcFile);
                     while (isspace(next) && next != '\n' && next != EOF) next = fgetc(srcFile);
-                    if (next == 'i') {
-                        int second = fgetc(srcFile);
-                        if (second == 'f') {
-                            token.lexeme[lexemeIndex++] = ' ';
-                            token.lexeme[lexemeIndex++] = 'i';
-                            token.lexeme[lexemeIndex++] = 'f';
-                            token.lexeme[lexemeIndex] = '\0';
-                            token.type = getlexemeType(token.lexeme);
-                        } else {
-                            ungetc(second, srcFile);
-                            ungetc(next, srcFile);
+                    switch(next){
+                        case 'i': {
+                            int second = fgetc(srcFile);
+                            switch(second){
+                                case 'f': {
+                                    token.lexeme[lexemeIndex++] = ' ';
+                                    token.lexeme[lexemeIndex++] = 'i';
+                                    token.lexeme[lexemeIndex++] = 'f';
+                                    token.lexeme[lexemeIndex] = '\0';
+                                    token.type = getlexemeType(token.lexeme);
+                                    break;
+                                }
+                                default:
+                                    ungetc(second, srcFile);
+                                    ungetc(next, srcFile);
+                                    break;
+                            }
+                            break;
                         }
-                    } else {
-                        ungetc(next, srcFile);
+                        default:
+                            ungetc(next, srcFile);
+                            break;
                     }
                 }
                 token.line_number = line_number;
@@ -332,15 +362,18 @@ Token getNextToken(FILE* srcFile){
         case STATE_IN_NUMBER:
             if (isdigit((unsigned char)ch)) {
                 token.lexeme[lexemeIndex++] = ch;
-            } else if (ch == '.' && !decimalPointEncountered) {
+            }
+            else if (ch == '.' && !decimalPointEncountered) {
                 decimalPointEncountered = true;
                 token.lexeme[lexemeIndex++] = ch;
-            } else if (ch == '.' && decimalPointEncountered) {
+            }
+            else if (ch == '.' && decimalPointEncountered) {
                 token.lexeme[lexemeIndex] = '\0';
                 token.type = Token_Unknown;
                 token.line_number = line_number;
                 return token;
-            } else {
+            }
+            else {
                 if (ch != EOF && ch != '\n' && !isspace(ch)) ungetc(ch, srcFile);
                 else if (ch == '\n') ungetc(ch, srcFile);
                 token.lexeme[lexemeIndex] = '\0';
@@ -351,106 +384,119 @@ Token getNextToken(FILE* srcFile){
             break;
 
         case STATE_IN_STRING:
-            if (ch == '"') {
-                token.lexeme[lexemeIndex++] = ch;
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_String;
-                token.line_number = line_number;
-                return token;
-            } else if (ch == '\\') {
-                token.lexeme[lexemeIndex++] = '\\';
-                currentState = STATE_IN_STRING_ESCAPE;
-            } else if (ch == EOF) {
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Unknown;
-                strcpy(token.lexeme, "Unclosed string literal");
-                token.line_number = line_number;
-                return token;
-            } else {
-                if (ch == '\n') consume_newline();  // count newline inside string
-                token.lexeme[lexemeIndex++] = ch;
+            switch(ch){
+                case '"':
+                    token.lexeme[lexemeIndex++] = ch;
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_String;
+                    token.line_number = line_number;
+                    return token;
+                break;
+                case '\\':
+                    token.lexeme[lexemeIndex++] = '\\';
+                    currentState = STATE_IN_STRING_ESCAPE;
+                break;
+                case EOF:
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Unknown;
+                    strcpy(token.lexeme, "Unclosed string literal");
+                    token.line_number = line_number;
+                    return token;
+                default:
+                    if (ch == '\n') consume_newline();  // count newline inside string
+                    token.lexeme[lexemeIndex++] = ch;
+                    continue;
             }
             break;
 
         case STATE_IN_STRING_ESCAPE:
-            if (ch == EOF) {
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Unknown;
-                strcpy(token.lexeme, "Unclosed string literal");
-                token.line_number = line_number;
-                return token;
-            } else {
-                if (ch == '\n') consume_newline();
-                token.lexeme[lexemeIndex++] = ch;
-                currentState = STATE_IN_STRING;
+            switch(ch){
+                case EOF:
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Unknown;
+                    strcpy(token.lexeme, "Unclosed string literal");
+                    token.line_number = line_number;
+                    return token;
+                default:
+                    if(ch == '\n') consume_newline();
+                    token.lexeme[lexemeIndex++] = ch;
+                    currentState = STATE_IN_STRING;
+                break;
             }
             break;
 
         case STATE_IN_CHAR:
-            if (ch == '\'') {
-                token.lexeme[lexemeIndex++] = ch;
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Character;
-                token.line_number = line_number;
-                return token;
-            } else if (ch == '\n') {
-                ungetc(ch, srcFile);
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Unknown;
-                strcpy(token.lexeme, "Unclosed character literal");
-                token.line_number = line_number;
-                return token;
-            } else if (ch == EOF) {
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Unknown;
-                strcpy(token.lexeme, "Unclosed character literal");
-                token.line_number = line_number;
-                return token;
-            } else {
-                if (ch == '\n') consume_newline();
-                token.lexeme[lexemeIndex++] = ch;
+            switch(ch){
+                case '\'':
+                    token.lexeme[lexemeIndex++] = ch;
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Character;
+                    token.line_number = line_number;
+                    return token;
+                case '\n':
+                    ungetc(ch, srcFile);
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Unknown;
+                    strcpy(token.lexeme, "Unclosed character literal");
+                    token.line_number = line_number;
+                    return token;
+                case EOF:
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Unknown;
+                    strcpy(token.lexeme, "Unclosed character literal");
+                    token.line_number = line_number;
+                    return token;
+                default:
+                    if (ch == '\n') consume_newline();
+                    token.lexeme[lexemeIndex++] = ch;
+                break;
             }
             break;
 
         case STATE_IN_SINGLE_LINE_COMMENT:
-            if (ch == '\n' || ch == EOF) {
-                if (ch == '\n') ungetc(ch, srcFile);
-                token.lexeme[lexemeIndex] = '\0';
-                token.type = Token_Comment;
-                token.line_number = line_number;
-                return token;
-            } else {
-                token.lexeme[lexemeIndex++] = ch;
+            switch (ch){
+                case '\n': case EOF:
+                    if (ch == '\n') ungetc(ch, srcFile);
+                    token.lexeme[lexemeIndex] = '\0';
+                    token.type = Token_Comment;
+                    token.line_number = line_number;
+                    return token;
+                default:
+                    token.lexeme[lexemeIndex++] = ch;
+                break;
             }
             break;
 
         case STATE_IN_BLOCK_COMMENT:
-            if (ch == '\n') consume_newline();
-            if (ch == '/') {
-                int next = fgetc(srcFile);
-                if (next == '~') {
-                    token.lexeme[lexemeIndex++] = '/';
-                    token.lexeme[lexemeIndex++] = '~';
-                    token.type = Token_Comment;
-                    token.lexeme[lexemeIndex] = '\0';
-                    token.line_number = line_number;
-                    return token;
-                } else if (next == EOF) {
+            switch(ch){
+                case '\n':
+                    consume_newline();
+                break;
+                case EOF:
                     token.type = Token_Unknown;
                     strcpy(token.lexeme, "Unclosed block comment");
                     token.line_number = line_number;
                     return token;
-                } else {
-                    ungetc(next, srcFile);
-                    token.lexeme[lexemeIndex++] = '/';
+                case '/':{
+                    int next = fgetc(srcFile);
+                    switch(next){
+                        case '~':
+                            token.lexeme[lexemeIndex++] = '/';
+                            token.lexeme[lexemeIndex++] = '~';
+                            token.lexeme[lexemeIndex] = '\0';
+                            token.type = Token_Comment;
+                            token.line_number = line_number;
+                            return token;
+                        default:
+                            ungetc(next, srcFile);
+                            token.lexeme[lexemeIndex++] = '/';
+                        break;
+                    }
+                    break;
                 }
-            } else if (ch == EOF) {
-                token.type = Token_Unknown;
-                strcpy(token.lexeme, "Unclosed block comment");
-                token.line_number = line_number;
-                return token;
-            } else {
-                token.lexeme[lexemeIndex++] = ch;
+                default:
+                    token.lexeme[lexemeIndex++] = ch;
+                break;
             }
             break;
 
@@ -498,20 +544,9 @@ Token getNextToken(FILE* srcFile){
 }
 
 Token_Type getlexemeType(const char* lexeme){
-    // Check if lexeme is a keyword; STATE_IN_IDENTIFIER only
-    for(int i = 0; i < KEYWORD_COUNT; i++){
-        if(strcmp(lexeme, keywords[i].word) == 0){
-            return keywords[i].type;
-        }
-    }
-
-    // Can use in the future for Numbers
-    // size_t len = strlen(lexeme);
-    // bool isNumber = true;
-    // for (size_t i = 0; i < len; ++i) {
-    //     if (!isdigit((unsigned char)lexeme[i]) && lexeme[i] != '.') { isNumber = false; break; }
-    // }
-    // if (isNumber) return Token_Number;
+    // Check if lexeme is a keyword first through hash lookup
+    Token_Type kw = lookupKeyword(lexeme);
+    if (kw != Token_Identifier) return kw;
 
     // Check for tokens for delimeters and operators
     switch(lexeme[0]){
@@ -523,12 +558,7 @@ Token_Type getlexemeType(const char* lexeme){
         case '\'': return Token_Delim_SQuote;
         case '"': return Token_Delim_DQuote;
         case '.': return Token_Delim_Period;
-        case '+': return Token_Arithmetic_Operator;
-        case '*': return Token_Arithmetic_Operator;
-        case '/': return Token_Arithmetic_Operator;
-        case '-': return Token_Arithmetic_Operator;
-        case '^': return Token_Arithmetic_Operator;
-        case '%': return Token_Arithmetic_Operator;
+        case '+': case '-': case '*': case '/': case '^': case '%': return Token_Arithmetic_Operator;
         case '=':
             switch(lexeme[1]){
                 case '=': return Token_Boolean_Operator;
@@ -555,6 +585,33 @@ Token_Type getlexemeType(const char* lexeme){
     }
     
     return Token_Identifier; // Default to identifier
+}
+
+static inline unsigned keywordHash(const char* s) {
+    unsigned h = 5381;
+    for (unsigned char c; (c = (unsigned char)*s++); ) {
+        h = ((h << 5) + h) ^ c;   // h * 33 ^ c
+    }
+    return h & (KEYWORD_BUCKETS - 1); // KEYWORD_BUCKETS must be power of two (128)
+}
+
+void initKeywordTable(void) {
+    for (size_t i = 0; i < KEYWORD_COUNT; ++i) {
+        KeywordNode* n = &keywordNodes[i];
+        n->word = keywords[i].word;
+        n->type = keywords[i].type;
+        unsigned h = keywordHash(n->word);
+        n->next = keywordBuckets[h];
+        keywordBuckets[h] = n;
+    }
+}
+
+Token_Type lookupKeyword(const char* lexeme) {
+    unsigned h = keywordHash(lexeme);
+    for (KeywordNode* n = keywordBuckets[h]; n; n = n->next) {
+        if (strcmp(lexeme, n->word) == 0) return n->type;
+    }
+    return Token_Identifier;
 }
 
 const char* outputToken(Token token){
