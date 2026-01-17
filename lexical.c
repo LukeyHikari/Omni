@@ -1,3 +1,4 @@
+#include "lexical.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -196,7 +197,11 @@ int main(int argc, char *argv[]){
     initKeywordTable();
 
     // For testing purposes, hardcode filename here
+<<<<<<< Updated upstream
     //const char* filename = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\complexCode.omni";
+=======
+    //const char* filename = "C:\\Users\\Wayne\\Documents\\GitHub\\Omni\\samplecode3.omni";
+>>>>>>> Stashed changes
     
     const char* filename = argv[1];
 
@@ -223,7 +228,7 @@ int main(int argc, char *argv[]){
         fprintf(outFile, "%-20s %-20s %-20d\n",
                 (token.lexeme[0] == '\n' ? "\\n" : token.lexeme),
                 tokenTypeStrings[token.type],
-                token.line_number);   // FIX: use token.line_number not global
+                token.line_number);
         token_count++;
         if (token.type == Token_CodeEnd) break;
     } while (1);
@@ -235,9 +240,14 @@ int main(int argc, char *argv[]){
     printf("\nProcessed %d tokens\n", token_count);
 
     fclose(src);
+    fclose(outFile);  // ADD THIS LINE to close the output file
 
-    // Return success if no unknown tokens were found
-    return (token.type == Token_Unknown) ? EXIT_FAILURE : EXIT_SUCCESS;
+    // ADD THESE LINES to run syntactic analysis
+    bool syntaxValid = runSyntacticAnalysis();
+
+    // Return success only if both lexical and syntactic analysis passed
+    int exitCode = (token.type == Token_Unknown || !syntaxValid) ? EXIT_FAILURE : EXIT_SUCCESS;
+    return exitCode;
 }
 
 Token getNextToken(FILE* srcFile){
