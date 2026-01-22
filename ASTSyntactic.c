@@ -296,6 +296,7 @@ int token_capacity = 0;
    int main
    ========================= */
 
+<<<<<<< Updated upstream
 int main(int argc, char *argv[]){
     // Expect filename argument; terminal usage: ./*parser_filename* <symbol_table.txt>
     if (argc < 2) {
@@ -303,22 +304,40 @@ int main(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
+=======
+int main(int argc, char *argv[]) {
+>>>>>>> Stashed changes
     // Early debug to confirm program start
     printf("PROGRAM START\n");
     fflush(stdout);
 
     // Allocate tokens pointer and load from uploaded symbol table
     tokens = NULL; // Loader will allocate
+<<<<<<< Updated upstream
 
     // For testing purposes, hardcode symbol table path here
     //const char* symbolTablePath = "D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\output\\symbol_table.txt";
     const char* symbolTablePath = argv[1];
     loadTokensFromSymbolTable(symbolTablePath); 
+=======
+    
+    // Use command-line argument if provided, otherwise use default path
+    const char* symbol_table_path = (argc > 1) 
+        ? argv[1] 
+        : "symbol_table.txt";
+    
+    printf("Loading tokens from: %s\n", symbol_table_path);
+    fflush(stdout);
+    
+    loadTokensFromSymbolTable(symbol_table_path); 
+>>>>>>> Stashed changes
 
     // Call top-level parser function
     printf("\n--- Parsing Program ---\n");
+    fflush(stdout);
     AST_Node* root = parse();
     printf("--- Parsing Finished ---\n");
+    fflush(stdout);
 
     // Debug: print loaded token count and some tokens for verification
     printf("\n--- DEBUG: Loaded Tokens ---\n");
@@ -328,19 +347,28 @@ int main(int argc, char *argv[]){
     }
     fflush(stdout);
 
-    // Print the generated AST
+    // Print the generated AST to terminal
     printf("\n--- Abstract Syntax Tree ---\n");
     printAST(root, 0);
     printf("---------------------------\n");
+    fflush(stdout);
 
+<<<<<<< Updated upstream
     // Write AST to JSON file for semantic analyzer
     writeAST_SExpr("D:\\Files\\School\\University\\3Y1S\\7. PPL\\Mini PL\\Omni\\ast.json", root);
+=======
+    // Write AST to JSON file in current working directory
+    const char* output_file = "ast.json";
+    printf("\nWriting AST to: %s\n", output_file);
+    writeAST_SExpr(output_file, root);
+>>>>>>> Stashed changes
 
     // Free all allocated memory
     freeAST(root);
-    free(tokens); // Free the token array itself
+    free(tokens);
     
     printf("\nAST memory freed. Program complete.\n");
+    fflush(stdout);
     return 0;
 }
 
